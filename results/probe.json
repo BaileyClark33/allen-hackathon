@@ -1,0 +1,266 @@
+{
+  "catalog": {
+    "nano": {
+      "base_url": "https://api.tokenfactory.nebius.com/v1/",
+      "id": "nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B",
+      "name": "Nemotron-3-Nano-30B-A3B",
+      "created": 1791929535,
+      "context_length": 262144,
+      "architecture": {
+        "modality": "text->text",
+        "tokenizer": "Other"
+      },
+      "quantization": "fp8",
+      "pricing": {
+        "prompt": "0.00000006",
+        "completion": "0.00000024",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      },
+      "per_request_limits": {
+        "tokens_per_minute": 800000.0,
+        "requests_per_minute": 100.0,
+        "burst_ratio": 1.0
+      },
+      "object": "model",
+      "owned_by": "system",
+      "regions": [
+        {
+          "country_code": "FI",
+          "name": "eu-north1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ]
+    },
+    "super": {
+      "base_url": "https://api.tokenfactory.nebius.com/v1/",
+      "id": "nvidia/nemotron-3-super-120b-a12b",
+      "name": "Nemotron-3-Super-120b-a12b",
+      "created": 1773187200,
+      "context_length": 262144,
+      "architecture": {
+        "modality": "text->text",
+        "tokenizer": "Other"
+      },
+      "quantization": "fp4",
+      "pricing": {
+        "prompt": "0.0000003",
+        "completion": "0.0000009",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      },
+      "per_request_limits": {
+        "tokens_per_minute": 200000.0,
+        "requests_per_minute": 300.0,
+        "burst_ratio": 1.0
+      },
+      "object": "model",
+      "owned_by": "system",
+      "regions": [
+        {
+          "country_code": "US",
+          "name": "us-central1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ]
+    },
+    "ultra": {
+      "base_url": "https://api.tokenfactory.nebius.com/v1/",
+      "id": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "name": "Nemotron-3-Ultra-550b-a55b",
+      "created": 1780531200,
+      "context_length": 1048576,
+      "architecture": {
+        "modality": "text->text",
+        "tokenizer": "Other"
+      },
+      "quantization": "fp4",
+      "pricing": {
+        "prompt": "0.000001",
+        "completion": "0.000003",
+        "image": "0",
+        "price_per_video_second": "0",
+        "request": "0",
+        "price_per_minute": "0",
+        "input_cache_read": null
+      },
+      "per_request_limits": {
+        "tokens_per_minute": 200000.0,
+        "requests_per_minute": 300.0,
+        "burst_ratio": 1.0
+      },
+      "object": "model",
+      "owned_by": "system",
+      "regions": [
+        {
+          "country_code": "US",
+          "name": "us-central1"
+        }
+      ],
+      "supported_features": [
+        "tools",
+        "reasoning"
+      ],
+      "supported_sampling_parameters": [
+        "temperature",
+        "top_p",
+        "top_k",
+        "repetition_penalty",
+        "frequency_penalty",
+        "presence_penalty"
+      ]
+    }
+  },
+  "calls": {
+    "ping_tier1": {
+      "ok": true,
+      "parsed_json": null,
+      "content": "OK",
+      "reasoning_chars": 0,
+      "input_tokens": 23,
+      "output_tokens": 2,
+      "latency_s": 0.81,
+      "finish_reason": "stop",
+      "cost_usd": 2e-06
+    },
+    "ping_tier2": {
+      "ok": true,
+      "parsed_json": null,
+      "content": "OK",
+      "reasoning_chars": 0,
+      "input_tokens": 23,
+      "output_tokens": 2,
+      "latency_s": 0.61,
+      "finish_reason": "stop",
+      "cost_usd": 9e-06
+    },
+    "ping_tier3": {
+      "ok": true,
+      "parsed_json": null,
+      "content": "OK",
+      "reasoning_chars": 0,
+      "input_tokens": 23,
+      "output_tokens": 2,
+      "latency_s": 0.66,
+      "finish_reason": "stop",
+      "cost_usd": 2.9e-05
+    },
+    "nano_think_off": {
+      "ok": true,
+      "parsed_json": 391,
+      "content": "391",
+      "reasoning_chars": 0,
+      "input_tokens": 32,
+      "output_tokens": 4,
+      "latency_s": 0.46,
+      "finish_reason": "stop",
+      "cost_usd": 3e-06
+    },
+    "nano_think_on": {
+      "ok": true,
+      "parsed_json": 391,
+      "content": "391",
+      "reasoning_chars": 139,
+      "input_tokens": 32,
+      "output_tokens": 57,
+      "latency_s": 0.56,
+      "finish_reason": "stop",
+      "cost_usd": 1.6e-05
+    },
+    "ultra_think_on": {
+      "ok": true,
+      "parsed_json": 391,
+      "content": "391",
+      "reasoning_chars": 55,
+      "input_tokens": 32,
+      "output_tokens": 31,
+      "latency_s": 0.64,
+      "finish_reason": "stop",
+      "cost_usd": 0.000125
+    },
+    "json_schema": {
+      "ok": true,
+      "parsed_json": {
+        "tier": 1,
+        "reasoning": "The query 'What is EBITDA?' is a straightforward definition of a financial term, requiring only basic knowledge of finance. It does not involve complex analysis, interpretation, or application of financial concepts, making it a Tier 1 question."
+      },
+      "content": "{\n  \"tier\": 1,\n  \"reasoning\": \"The query 'What is EBITDA?' is a straightforward definition of a financial term, requiring only basic knowledge of finance. It does not involve complex analysis, interpr",
+      "reasoning_chars": 0,
+      "input_tokens": 51,
+      "output_tokens": 65,
+      "latency_s": 0.68,
+      "finish_reason": "stop",
+      "cost_usd": 1.9e-05
+    },
+    "json_object": {
+      "ok": true,
+      "parsed_json": {
+        "tier": 1,
+        "reasoning": "The query 'What is EBITDA?' is a straightforward definition of a commonly used financial metric, requiring only basic financial knowledge and no specialized expertise or contextual interpretation."
+      },
+      "content": "{\n  \"tier\": 1,\n  \"reasoning\": \"The query 'What is EBITDA?' is a straightforward definition of a commonly used financial metric, requiring only basic financial knowledge and no specialized expertise or",
+      "reasoning_chars": 0,
+      "input_tokens": 51,
+      "output_tokens": 50,
+      "latency_s": 0.58,
+      "finish_reason": "stop",
+      "cost_usd": 1.5e-05
+    },
+    "prompt_only": {
+      "ok": true,
+      "parsed_json": {
+        "tier": 1,
+        "reasoning": "The query 'What is EBITDA?' is a straightforward definition of a widely used financial metric, requiring only basic financial knowledge to answer. It does not involve complex calculations, multi-step reasoning, or specialized domain expertise beyond introductory finance concepts, placing it in the simplest classification tier."
+      },
+      "content": "{\n  \"tier\": 1,\n  \"reasoning\": \"The query 'What is EBITDA?' is a straightforward definition of a widely used financial metric, requiring only basic financial knowledge to answer. It does not involve co",
+      "reasoning_chars": 0,
+      "input_tokens": 51,
+      "output_tokens": 73,
+      "latency_s": 0.85,
+      "finish_reason": "stop",
+      "cost_usd": 2.1e-05
+    },
+    "ultra_thinking_json_schema": {
+      "ok": true,
+      "parsed_json": {
+        "tier": 1,
+        "reasoning": "The query asks for a basic definition and expansion of a standard financial acronym. It requires factual recall of a single, well-defined concept (Earnings Before Interest, Taxes, Depreciation, and Amortization) without needing calculation steps, comparative analysis, or critical evaluation of limitations."
+      },
+      "content": "{\n  \"tier\": 1,\n  \"reasoning\": \"The query asks for a basic definition and expansion of a standard financial acronym. It requires factual recall of a single, well-defined concept (Earnings Before Intere",
+      "reasoning_chars": 628,
+      "input_tokens": 51,
+      "output_tokens": 220,
+      "latency_s": 1.27,
+      "finish_reason": "stop",
+      "cost_usd": 0.000711
+    }
+  }
+}
