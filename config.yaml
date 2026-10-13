@@ -1,0 +1,158 @@
+api:
+  base_url: https://api.tokenfactory.nebius.com/v1/
+  api_key_env: NEBIUS_API_KEY
+  timeout_s: 180
+  max_retries: 5
+  backoff_initial_s: 2
+  backoff_max_s: 60
+  thinking_control: chat_template_kwargs
+  json_mode: json_schema
+
+models:
+  nano:
+    id: nvidia/NVIDIA-Nemotron-3-Nano-30B-A3B
+    base_url: null
+    input_usd_per_mtok: 0.06
+    output_usd_per_mtok: 0.24
+  super:
+    id: nvidia/nemotron-3-super-120b-a12b
+    base_url: null
+    input_usd_per_mtok: 0.30
+    output_usd_per_mtok: 0.90
+  ultra:
+    id: nvidia/Nemotron-3-Ultra-550b-a55b
+    base_url: null
+    input_usd_per_mtok: 1.00
+    output_usd_per_mtok: 3.00
+
+roles:
+  router:
+    model: nano
+    thinking: false
+    max_tokens: 300
+    temperature: 0.0
+  tier1:
+    model: nano
+    thinking: false
+    max_tokens: 1500
+    temperature: 0.3
+  tier2:
+    model: super
+    thinking: false
+    max_tokens: 1500
+    temperature: 0.3
+  tier3:
+    model: ultra
+    thinking: false
+    max_tokens: 1500
+    temperature: 0.3
+  judge:
+    model: ultra
+    thinking: true
+    max_tokens: 8000
+    temperature: 0.6
+    top_p: 0.95
+  generator:
+    model: ultra
+    thinking: false
+    max_tokens: 3000
+    temperature: 0.9
+
+tier_roles:
+  1: tier1
+  2: tier2
+  3: tier3
+
+estimates:
+  router: {input: 450, output: 60}
+  tier1: {input: 120, output: 700}
+  tier2: {input: 120, output: 700}
+  tier3: {input: 120, output: 700}
+  judge: {input: 1400, output: 1700}
+  generator: {input: 700, output: 900}
+
+budget:
+  total_credits_usd: 100.0
+  dry_run_limit: 20
+  min_observed_calls: 3
+
+datasets:
+  calibration:
+    dir: data/calibration
+    id_prefix: cal
+    target: 60
+  full:
+    dir: data/full
+    id_prefix: q
+    target: 600
+
+generation:
+  batch_size: 10
+  dedup_cosine_threshold: 0.85
+  seed: 7
+  concurrency: 4
+  max_rounds: 6
+  subdomains:
+    - market sizing
+    - market entry
+    - pricing strategy
+    - mergers and acquisitions
+    - competitive strategy
+    - operations and supply chain
+    - organizational design
+    - go-to-market
+    - unit economics
+    - corporate finance basics
+    - growth strategy
+    - digital transformation
+  personas:
+    - junior analyst at a consulting firm
+    - startup founder
+    - corporate strategy executive
+    - MBA student
+    - private equity associate
+
+labeling:
+  criteria: [accuracy, completeness, structure, actionability]
+  pass_threshold: 4.0
+  min_accuracy: 4
+  collapse_warn_frac: 0.6
+  concurrency: 4
+  locked: null
+
+tuning:
+  pass_threshold_grid: [3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75]
+  min_accuracy_grid: [3, 4, 5]
+  human_per_tier: 20
+  seed: 11
+
+split:
+  seed: 42
+  test_frac: 0.2
+
+router:
+  type: zero_shot
+
+evaluation:
+  bootstrap_samples: 2000
+  ci: 0.95
+  seed: 123
+  concurrency: 4
+
+human_agreement:
+  sample_size: 50
+  seed: 99
+
+app:
+  session_query_cap: 10
+  daily_spend_cap_usd: 2.0
+  total_spend_cap_usd: 15.0
+  max_query_chars: 1000
+  answer_max_tokens: 900
+
+paths:
+  calls_log: logs/calls.jsonl
+  app_spend_log: logs/app_spend.jsonl
+  splits_dir: data/splits
+  results_dir: results
+  prompts_dir: src/nemoroute/prompts

@@ -1,0 +1,20 @@
+You are building an evaluation dataset of realistic questions that people send to an AI assistant for management consulting and business strategy help.
+
+Write $n distinct questions that a $persona would realistically ask about $subdomain.
+
+Every question must be Level $tier as defined below.
+
+Definitions of all three levels, so you can stay inside the requested one:
+- Level 1 (simple): a definition, a factual lookup, or a single well-known concept. One short paragraph answers it fully. Example: "What is the difference between gross margin and contribution margin?"
+- Level 2 (medium): applying a standard framework or doing a structured analysis of a clearly specified situation. Needs organized multi-part reasoning but no deep judgment calls. Example: "Walk me through a Porter's Five Forces analysis for a regional craft brewery."
+- Level 3 (hard): multi-step strategy, market sizing with explicit assumptions, trade-offs under ambiguity, or recommendations that need judgment across several interacting factors. Example: "A mid-size European logistics firm is weighing entry into last-mile drone delivery in two US metros. Estimate the 5-year addressable market, outline the key risks, and recommend whether and how to enter."
+
+Requirements:
+- Vary phrasing, length, industries, company sizes, and geographies.
+- Write the way real users write: some terse, some with context; no numbering inside the question text.
+- Each question must be self-contained and answerable in text without browsing the web.
+- Do not repeat or lightly paraphrase these existing questions:
+$avoid
+
+Return only JSON in this exact shape, with no other text:
+{"queries": ["question 1", "question 2"]}
