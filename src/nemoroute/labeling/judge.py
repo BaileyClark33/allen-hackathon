@@ -33,7 +33,7 @@ def parse_scores(payload: Any, criteria: list[str]) -> dict[str, int]:
     return scores
 
 
-def empty_answer_judgment(query_id: str, tier: int, criteria: list[str]) -> dict[str, Any]:
+def empty_answer_judgment(query_id: str, tier: int | str, criteria: list[str]) -> dict[str, Any]:
     return {
         "query_id": query_id,
         "tier": tier,
@@ -54,14 +54,16 @@ def judge_answer(
     criteria: list[str],
     query_id: str,
     query: str,
-    tier: int,
+    tier: int | str,
     answer: str,
+    role: str = "judge",
 ) -> dict[str, Any]:
     if not answer.strip():
         return empty_answer_judgment(query_id, tier, criteria)
     prompt = template.substitute(query=query, answer=answer)
     result = client.chat(
-        "judge", [{"role": "user", "content": prompt}], step="judge", json_schema=judge_schema(criteria)
+        role, [{"role": "user", "content": prompt}], step=f"judge_{role}" if role != "judge" else "judge",
+        json_schema=judge_schema(criteria),
     )
     payload = extract_json(result.content)
     scores = parse_scores(payload, criteria)
@@ -76,4 +78,5 @@ def judge_answer(
         "latency_s": round(result.latency_s, 3),
         "cost_usd": result.cost_usd,
         "judge_called": True,
+        "judge_role": role,
     }

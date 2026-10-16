@@ -23,7 +23,7 @@ def summary_table(summaries: list[StrategySummary], baseline: str = "all-ultra")
     lines = [header, "|" + "---|" * 12]
     for s in summaries:
         relative = f"{s.mean_cost_usd / base.mean_cost_usd:.0%}" if base and base.mean_cost_usd else "n/a"
-        mix = ", ".join(f"T{t}:{n}" for t, n in s.tier_mix.items())
+        mix = ", ".join(f"T{t}:{n}" if isinstance(t, int) else f"{t}:{n}" for t, n in s.tier_mix.items())
         lines.append(
             f"| {s.strategy} | {s.n} | {s.mean_cost_usd:.5f} | {_ci(*s.cost_ci, fmt='.5f')} | {relative} "
             f"| {s.p50_latency_s:.2f} | {s.p95_latency_s:.2f} | {s.mean_score:.2f} | {_ci(*s.score_ci)} "
@@ -80,6 +80,22 @@ def render_report(
         f"- Under-routing rate (sent to a tier below the label): {r.under_routing_rate:.1%}",
         f"- Over-routing rate (sent to a tier above the label): {r.over_routing_rate:.1%}",
         "",
+        *(
+            [
+                "Other routers on the same items:",
+                "",
+                "| Router | Accuracy | 95% CI | Under-routing | Over-routing |",
+                "|---|---|---|---|---|",
+                *(
+                    f"| {name} | {m.accuracy:.1%} | {_ci(*m.accuracy_ci, scale=100, fmt='.1f')}% "
+                    f"| {m.under_routing_rate:.1%} | {m.over_routing_rate:.1%} |"
+                    for name, m in result.other_routing.items()
+                ),
+                "",
+            ]
+            if result.other_routing
+            else []
+        ),
         "| Tier | Precision | Recall |",
         "|---|---|---|",
     ]

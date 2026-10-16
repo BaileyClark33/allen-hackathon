@@ -17,5 +17,6 @@ class RoutingDecision:
 
 class Router(Protocol):
     name: str
+    role: str
 
     def route(self, query: str) -> RoutingDecision: ...
