@@ -47,6 +47,8 @@ def test_require_locked_refuses_when_unlocked(tmp_path):
         ("split_dataset.py", []),
         ("label_queries.py", ["--dataset", "full", "--limit", "1"]),
         ("generate_queries.py", ["--dataset", "full", "--limit", "1"]),
+        ("run_reference.py", ["--limit", "1"]),
+        ("export_sft.py", []),
     ],
 )
 def test_scripts_refuse_without_locked_thresholds(tmp_path, script, args):

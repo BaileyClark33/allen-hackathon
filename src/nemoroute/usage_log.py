@@ -5,6 +5,7 @@ from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from nemoroute.config import TOKEN_FACTORY
 from nemoroute.jsonl import append_jsonl, read_jsonl
 
 
@@ -22,6 +23,7 @@ class CallRecord:
     ok: bool
     finish_reason: str | None = None
     error: str | None = None
+    billing: str = TOKEN_FACTORY
 
 
 def utc_now() -> str:
@@ -38,10 +40,13 @@ class UsageLog:
     def rows(self) -> list[dict]:
         return read_jsonl(self.path)
 
-    def total_spend(self, since: datetime | None = None) -> float:
+    def total_spend(self, since: datetime | None = None, billing: str | None = TOKEN_FACTORY) -> float:
+        """Logged spend; by default only Token Factory calls, since the credit budget covers only those."""
         total = 0.0
         for row in self.rows():
             if since is not None and datetime.fromisoformat(row["ts"]) < since:
+                continue
+            if billing is not None and row.get("billing", TOKEN_FACTORY) != billing:
                 continue
             total += row.get("cost_usd", 0.0)
         return total
