@@ -10,7 +10,7 @@ from nemoroute.config import Config, load_config
 from nemoroute.labeling.answer import answer_messages
 from nemoroute.pricing import call_cost
 from nemoroute.prompts import load_prompt
-from nemoroute.routers.base import Router
+from nemoroute.routers.base import Router, RoutingDecision
 from nemoroute.routers.registry import build_router
 from nemoroute.usage_log import UsageLog
 
@@ -22,25 +22,35 @@ EXAMPLES = [
 ]
 
 
-def load_secret_key(cfg: Config) -> None:
-    if os.environ.get(cfg.api.api_key_env):
-        return
-    try:
-        value = st.secrets.get(cfg.api.api_key_env)
-    except Exception:
-        value = None
-    if value:
-        os.environ[cfg.api.api_key_env] = value
+ROUTER_LABELS = {"finetuned": "Fine-tuned Nano (LoRA)", "zero_shot": "Zero-shot Nano (prompted)"}
+FT_BASE_URL_ENV = "ROUTER_FT_BASE_URL"
+
+
+def load_secrets(cfg: Config) -> None:
+    ft = cfg.models["nano_ft"]
+    for name in (cfg.api.api_key_env, ft.api_key_env, FT_BASE_URL_ENV):
+        if not name or os.environ.get(name):
+            continue
+        try:
+            value = st.secrets.get(name)
+        except Exception:
+            value = None
+        if value:
+            os.environ[name] = value
+    if ft.base_url is None and os.environ.get(FT_BASE_URL_ENV):
+        ft.base_url = os.environ[FT_BASE_URL_ENV]
 
 
 @st.cache_resource
-def resources() -> tuple[Config, UsageLog, TokenFactoryClient, Router, str]:
+def resources() -> tuple[Config, UsageLog, TokenFactoryClient, dict[str, Router], str]:
     cfg = load_config()
-    load_secret_key(cfg)
+    load_secrets(cfg)
     app_log = UsageLog(cfg.path(cfg.paths.app_spend_log))
     client = TokenFactoryClient(cfg, app_log, run_id="app")
-    router = build_router(cfg, client, step="app_route")
-    return cfg, app_log, client, router, load_prompt(cfg, "answer").template
+    # The fine-tuned router is offered only when its vLLM endpoint is configured.
+    types = (["finetuned"] if cfg.models["nano_ft"].base_url else []) + ["zero_shot"]
+    routers = {t: build_router(cfg, client, step="app_route", router_type=t) for t in types}
+    return cfg, app_log, client, routers, load_prompt(cfg, "answer").template
 
 
 def init_state() -> None:
@@ -73,7 +83,7 @@ def main() -> None:
     st.set_page_config(page_title="Nemotron Router", page_icon=":compass:", layout="centered")
     init_state()
     try:
-        cfg, app_log, client, router, system_prompt = resources()
+        cfg, app_log, client, routers, system_prompt = resources()
     except RuntimeError as exc:
         st.error(str(exc))
         st.stop()
@@ -88,13 +98,25 @@ def main() -> None:
         if col.button(f"{label} example", use_container_width=True):
             st.session_state.query = example
     query = st.text_area("Your question", key="query", height=120, max_chars=cfg.app.max_query_chars)
+    choice = st.radio("Router", list(routers), format_func=ROUTER_LABELS.get, horizontal=True)
     if st.button("Route and answer", type="primary"):
-        run_query(cfg, app_log, client, router, system_prompt, query)
+        run_query(cfg, app_log, client, routers[choice], routers["zero_shot"], system_prompt, query)
     sidebar(cfg, app_log)
 
 
+def route_with_fallback(router: Router, fallback: Router, query: str) -> tuple[RoutingDecision, str | None]:
+    try:
+        return router.route(query), None
+    except Exception as exc:
+        if router is fallback:
+            raise
+        note = f"The fine-tuned router was unreachable ({type(exc).__name__}), so the zero-shot router was used."
+        return fallback.route(query), note
+
+
 def run_query(
-    cfg: Config, app_log: UsageLog, client: TokenFactoryClient, router: Router, system_prompt: str, query: str
+    cfg: Config, app_log: UsageLog, client: TokenFactoryClient, router: Router, fallback: Router,
+    system_prompt: str, query: str,
 ) -> None:
     decision = guard(cfg, app_log, query, st.session_state.count)
     if not decision.allowed:
@@ -103,7 +125,7 @@ def run_query(
 
     try:
         with st.spinner("Routing with Nemotron Nano..."):
-            route = router.route(query)
+            route, note = route_with_fallback(router, fallback, query)
         role = cfg.tier_roles[route.tier]
         model_name = TIER_NAMES.get(route.tier, f"Tier {route.tier}")
         with st.spinner(f"Answering with {model_name}..."):
@@ -123,7 +145,10 @@ def run_query(
     s.ultra += ultra_cost
 
     st.subheader(model_name)
-    st.caption(f"Router reasoning: {route.reasoning}")
+    if note:
+        st.info(note)
+    if route.reasoning:
+        st.caption(f"Router reasoning: {route.reasoning}")
     c1, c2, c3 = st.columns(3)
     c1.metric("Cost", f"${total_cost:.5f}")
     c2.metric("Latency", f"{total_latency:.2f}s")

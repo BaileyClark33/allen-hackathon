@@ -1,0 +1,9 @@
+Route this consulting or business-strategy query to the cheapest model tier that answers it well.
+Tier 1: definitions and factual lookups. Tier 2: standard frameworks and structured analysis. Tier 3: multi-step strategy, market sizing, ambiguous trade-offs.
+
+Query:
+<query>
+$query
+</query>
+
+Return only JSON: {"tier": N}
