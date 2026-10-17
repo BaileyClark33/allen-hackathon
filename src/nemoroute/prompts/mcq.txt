@@ -1,0 +1,1 @@
+You are an expert in business and economics. Answer the multiple-choice question. Reason briefly and step by step, then finish with a final line of the form "Answer: X", where X is the letter of the single best option.

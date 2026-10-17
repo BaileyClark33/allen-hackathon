@@ -1,0 +1,7 @@
+# GPU VM only (not needed for the main pipeline). Nano's hybrid Mamba layers may also need
+# mamba-ssm and causal-conv1d; install them if model loading asks for them.
+torch>=2.4
+transformers>=4.56
+peft>=0.17
+accelerate>=1.0
+vllm>=0.11

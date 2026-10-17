@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from nemoroute.config import Config, ModelConfig
+from nemoroute.config import TOKEN_FACTORY, Config, ModelConfig
 from nemoroute.usage_log import UsageLog
 
 
@@ -19,6 +19,7 @@ class CostLine:
     output_tokens: float
     usd: float
     source: str
+    billing: str = TOKEN_FACTORY
 
 
 @dataclass
@@ -28,6 +29,9 @@ class CostEstimate:
     @property
     def total_usd(self) -> float:
         return sum(line.usd for line in self.lines)
+
+    def total_for(self, billing: str) -> float:
+        return sum(line.usd for line in self.lines if line.billing == billing)
 
     @property
     def total_calls(self) -> int:
@@ -41,6 +45,8 @@ class CostEstimate:
                 f"{line.role:<10} {line.model_id:<40} {line.calls:>6} {line.input_tokens:>10.0f} "
                 f"{line.output_tokens:>10.0f} {line.usd:>9.4f}  {line.source}"
             )
+        for billing in sorted({line.billing for line in self.lines} - {TOKEN_FACTORY}):
+            rows.append(f"  of which billed outside Token Factory ({billing}): ${self.total_for(billing):.4f}")
         rows.append(f"{'total':<10} {'':<40} {self.total_calls:>6} {'':>10} {'':>10} {self.total_usd:>9.4f}")
         return "\n".join(rows)
 
@@ -60,6 +66,9 @@ def estimate(cfg: Config, calls_by_role: dict[str, int], usage_log: UsageLog | N
         model = cfg.model_for_role(role)
         in_tok, out_tok = avg_in * calls, avg_out * calls
         result.lines.append(
-            CostLine(role, model.id, calls, in_tok, out_tok, call_cost(model, int(in_tok), int(out_tok)), source)
+            CostLine(
+                role, model.id, calls, in_tok, out_tok, call_cost(model, int(in_tok), int(out_tok)), source,
+                model.billing,
+            )
         )
     return result

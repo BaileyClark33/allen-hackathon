@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = ROOT / "config.yaml"
+TOKEN_FACTORY = "token_factory"
 
 
 class ApiConfig(BaseModel):
@@ -28,6 +29,10 @@ class ApiConfig(BaseModel):
 class ModelConfig(BaseModel):
     id: str
     base_url: str | None = None
+    api_key_env: str | None = None
+    provider: Literal["openai_compatible", "anthropic"] = "openai_compatible"
+    effort: str | None = None
+    billing: str = "token_factory"
     input_usd_per_mtok: float
     output_usd_per_mtok: float
 
@@ -166,11 +171,12 @@ def load_config(path: Path | str | None = None) -> Config:
     return Config.model_validate(raw)
 
 
-def api_key(cfg: Config) -> str:
+def api_key(cfg: Config, env_name: str | None = None) -> str:
     load_dotenv(ROOT / ".env")
-    key = os.environ.get(cfg.api.api_key_env, "").strip()
+    env_name = env_name or cfg.api.api_key_env
+    key = os.environ.get(env_name, "").strip()
     if not key:
-        raise RuntimeError(f"{cfg.api.api_key_env} is not set. Add it to .env (see .env.example).")
+        raise RuntimeError(f"{env_name} is not set. Add it to .env (see .env.example).")
     return key
 
 

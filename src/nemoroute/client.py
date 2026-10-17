@@ -10,8 +10,9 @@ import openai
 from openai import OpenAI
 from tenacity import Retrying, retry_if_exception, stop_after_attempt, wait_exponential
 
+from nemoroute.anthropic_backend import AnthropicBackend
 from nemoroute.budget import RunBudget
-from nemoroute.config import Config, api_key
+from nemoroute.config import Config, ModelConfig, api_key
 from nemoroute.parsing import split_reasoning
 from nemoroute.pricing import call_cost
 from nemoroute.usage_log import CallRecord, UsageLog, utc_now
@@ -80,14 +81,57 @@ class TokenFactoryClient:
         self.run_budget = run_budget
         self.run_id = run_id or uuid.uuid4().hex[:12]
         self._key = api_key(cfg)
-        self._clients: dict[str, OpenAI] = {}
+        self._clients: dict[tuple[str, str], OpenAI] = {}
+        self._anthropic: dict[str, AnthropicBackend] = {}
 
-    def _client_for(self, base_url: str) -> OpenAI:
-        if base_url not in self._clients:
-            self._clients[base_url] = OpenAI(
-                base_url=base_url, api_key=self._key, timeout=self.cfg.api.timeout_s, max_retries=0
+    def _key_for(self, model: ModelConfig) -> str:
+        return api_key(self.cfg, model.api_key_env) if model.api_key_env else self._key
+
+    def _client_for(self, base_url: str, key: str | None = None) -> OpenAI:
+        key = key or self._key
+        if (base_url, key) not in self._clients:
+            self._clients[(base_url, key)] = OpenAI(
+                base_url=base_url, api_key=key, timeout=self.cfg.api.timeout_s, max_retries=0
             )
-        return self._clients[base_url]
+        return self._clients[(base_url, key)]
+
+    def _anthropic_for(self, key: str) -> AnthropicBackend:
+        if key not in self._anthropic:
+            self._anthropic[key] = AnthropicBackend(key, self.cfg.api.timeout_s, self.cfg.api.max_retries)
+        return self._anthropic[key]
+
+    def _call_openai(
+        self, model: ModelConfig, role: str, messages: list[Message], json_schema: dict[str, Any] | None,
+        overrides: dict[str, Any],
+    ) -> tuple[str, str, int, int, str | None]:
+        client = self._client_for(model.base_url or self.cfg.api.base_url, self._key_for(model))
+        kwargs = self._request_kwargs(role, json_schema, overrides)
+        retrying = Retrying(
+            stop=stop_after_attempt(self.cfg.api.max_retries + 1),
+            wait=RetryAfterWait(self.cfg.api.backoff_initial_s, self.cfg.api.backoff_max_s),
+            retry=retry_if_exception(is_retryable),
+            reraise=True,
+        )
+        response = retrying(client.chat.completions.create, model=model.id, messages=messages, **kwargs)
+        choice = response.choices[0]
+        message = choice.message
+        content, inline_reasoning = split_reasoning(message.content)
+        extra = message.model_extra or {}
+        reasoning = extra.get("reasoning_content") or extra.get("reasoning") or inline_reasoning
+        usage = response.usage
+        return (
+            content,
+            reasoning or "",
+            usage.prompt_tokens if usage else 0,
+            usage.completion_tokens if usage else 0,
+            choice.finish_reason,
+        )
+
+    def _call_anthropic(
+        self, model: ModelConfig, role: str, messages: list[Message], json_schema: dict[str, Any] | None
+    ) -> tuple[str, str, int, int, str | None]:
+        reply = self._anthropic_for(self._key_for(model)).chat(model, self.cfg.roles[role], messages, json_schema)
+        return reply.content, "", reply.input_tokens, reply.output_tokens, reply.finish_reason
 
     def _request_kwargs(
         self, role: str, json_schema: dict[str, Any] | None, overrides: dict[str, Any]
@@ -128,17 +172,16 @@ class TokenFactoryClient:
         if self.run_budget is not None:
             self.run_budget.check()
         model = self.cfg.model_for_role(role)
-        client = self._client_for(model.base_url or self.cfg.api.base_url)
-        kwargs = self._request_kwargs(role, json_schema, dict(overrides))
-        retrying = Retrying(
-            stop=stop_after_attempt(self.cfg.api.max_retries + 1),
-            wait=RetryAfterWait(self.cfg.api.backoff_initial_s, self.cfg.api.backoff_max_s),
-            retry=retry_if_exception(is_retryable),
-            reraise=True,
-        )
         start = time.perf_counter()
         try:
-            response = retrying(client.chat.completions.create, model=model.id, messages=messages, **kwargs)
+            if model.provider == "anthropic":
+                content, reasoning, input_tokens, output_tokens, finish_reason = self._call_anthropic(
+                    model, role, messages, json_schema
+                )
+            else:
+                content, reasoning, input_tokens, output_tokens, finish_reason = self._call_openai(
+                    model, role, messages, json_schema, dict(overrides)
+                )
         except Exception as exc:
             self.usage_log.record(
                 CallRecord(
@@ -153,18 +196,11 @@ class TokenFactoryClient:
                     cost_usd=0.0,
                     ok=False,
                     error=f"{type(exc).__name__}: {exc}"[:500],
+                    billing=model.billing,
                 )
             )
             raise
         latency = time.perf_counter() - start
-        choice = response.choices[0]
-        message = choice.message
-        content, inline_reasoning = split_reasoning(message.content)
-        extra = message.model_extra or {}
-        reasoning = extra.get("reasoning_content") or extra.get("reasoning") or inline_reasoning
-        usage = response.usage
-        input_tokens = usage.prompt_tokens if usage else 0
-        output_tokens = usage.completion_tokens if usage else 0
         cost = call_cost(model, input_tokens, output_tokens)
         if self.run_budget is not None:
             self.run_budget.add(cost)
@@ -180,19 +216,20 @@ class TokenFactoryClient:
                 latency_s=round(latency, 3),
                 cost_usd=cost,
                 ok=True,
-                finish_reason=choice.finish_reason,
+                finish_reason=finish_reason,
+                billing=model.billing,
             )
         )
         return ChatResult(
             content=content,
-            reasoning=reasoning or "",
+            reasoning=reasoning,
             input_tokens=input_tokens,
             output_tokens=output_tokens,
             latency_s=latency,
             cost_usd=cost,
             model=model.id,
             role=role,
-            finish_reason=choice.finish_reason,
+            finish_reason=finish_reason,
         )
 
     def list_models(self, verbose: bool = True, base_url: str | None = None) -> list[dict[str, Any]]:

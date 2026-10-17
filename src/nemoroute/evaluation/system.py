@@ -12,7 +12,7 @@ from nemoroute.labeling.label import UNRESOLVED, passes
 @dataclass
 class ItemOutcome:
     query_id: str
-    tier: int
+    tier: int | str
     cost_usd: float
     latency_s: float
     mean_score: float
@@ -32,7 +32,7 @@ class StrategySummary:
     score_ci: tuple[float, float]
     pass_rate: float
     pass_ci: tuple[float, float]
-    tier_mix: dict[int, int]
+    tier_mix: dict[int | str, int]
 
 
 def oracle_tier(label: Any, max_tier: int) -> int:
@@ -40,7 +40,7 @@ def oracle_tier(label: Any, max_tier: int) -> int:
 
 
 def strategy_outcomes(
-    chosen: dict[str, int],
+    chosen: dict[str, int | str],
     responses: dict[tuple[str, int], dict[str, Any]],
     judgments: dict[tuple[str, int], dict[str, Any]],
     pass_threshold: float,
@@ -72,7 +72,7 @@ def summarize(
     latency = np.array([o.latency_s for o in outcomes])
     score = np.array([o.mean_score for o in outcomes])
     passed = np.array([float(o.passed) for o in outcomes])
-    mix: dict[int, int] = {}
+    mix: dict[int | str, int] = {}
     for o in outcomes:
         mix[o.tier] = mix.get(o.tier, 0) + 1
     empty = len(outcomes) == 0
@@ -88,5 +88,5 @@ def summarize(
         score_ci=bootstrap_ci(score, n_samples=n_bootstrap, ci=ci, seed=seed),
         pass_rate=float("nan") if empty else float(passed.mean()),
         pass_ci=bootstrap_ci(passed, n_samples=n_bootstrap, ci=ci, seed=seed),
-        tier_mix=dict(sorted(mix.items())),
+        tier_mix=dict(sorted(mix.items(), key=lambda kv: str(kv[0]))),
     )

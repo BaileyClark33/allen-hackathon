@@ -4,7 +4,7 @@ import argparse
 import sys
 import threading
 
-from nemoroute.config import Config
+from nemoroute.config import TOKEN_FACTORY, Config
 from nemoroute.pricing import CostEstimate
 from nemoroute.usage_log import UsageLog
 
@@ -58,7 +58,7 @@ def confirm_or_exit(cfg: Config, est: CostEstimate, usage_log: UsageLog, yes: bo
     if est.total_calls == 0:
         print("Nothing to do.")
         return
-    if est.total_usd > remaining:
+    if est.total_for(TOKEN_FACTORY) > remaining:
         raise SystemExit("Estimated cost exceeds remaining credits. Aborting.")
     if yes:
         print("--yes given, proceeding.")

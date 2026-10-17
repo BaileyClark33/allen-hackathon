@@ -44,7 +44,9 @@ def confusion_chart(matrix: np.ndarray, tiers: list[int], title: str, path: Path
     plt.close(fig)
 
 
-def cost_quality_chart(summaries: list[StrategySummary], path: Path) -> None:
+def cost_quality_chart(
+    summaries: list[StrategySummary], path: Path, y_label: str = "Mean judge score (1-5)"
+) -> None:
     fig, ax = plt.subplots(figsize=(6.4, 4.4))
     _style(ax)
     for i, s in enumerate(summaries):
@@ -57,7 +59,7 @@ def cost_quality_chart(summaries: list[StrategySummary], path: Path) -> None:
         ax.annotate(s.strategy, (cost, s.mean_score), textcoords="offset points",
                     xytext=(7, 6), color=INK, fontsize=9)
     ax.set_xlabel("Mean cost per query (USD x 1,000)", color=INK)
-    ax.set_ylabel("Mean judge score (1-5)", color=INK)
+    ax.set_ylabel(y_label, color=INK)
     ax.set_title("Cost vs. quality (95% bootstrap CIs)", color=INK, fontsize=11, loc="left")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
