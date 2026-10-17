@@ -13,16 +13,9 @@ ROUTER_SCHEMA = {
     "additionalProperties": False,
 }
 
-TIER_ONLY_SCHEMA = {
-    "type": "object",
-    "properties": {"tier": {"type": "integer", "enum": [1, 2, 3]}},
-    "required": ["tier"],
-    "additionalProperties": False,
-}
-
 
 class ZeroShotRouter:
-    """Prompted JSON router. Also serves the fine-tuned router, which differs only in role, prompt and schema."""
+    """Prompted JSON router. Role, name and schema are parameters so other prompted routers can reuse it."""
 
     def __init__(
         self,

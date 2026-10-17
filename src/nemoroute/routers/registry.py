@@ -6,7 +6,7 @@ from nemoroute.client import ChatClient
 from nemoroute.config import Config
 from nemoroute.prompts import load_prompt
 from nemoroute.routers.base import Router
-from nemoroute.routers.zero_shot import TIER_ONLY_SCHEMA, ZeroShotRouter
+from nemoroute.routers.zero_shot import ZeroShotRouter
 
 RouterFactory = Callable[[Config, ChatClient, str], Router]
 
@@ -15,14 +15,7 @@ def _zero_shot(cfg: Config, client: ChatClient, step: str) -> Router:
     return ZeroShotRouter(client, load_prompt(cfg, "router"), cfg.tiers(), step=step)
 
 
-def _finetuned(cfg: Config, client: ChatClient, step: str) -> Router:
-    return ZeroShotRouter(
-        client, load_prompt(cfg, "router_ft"), cfg.tiers(), step=step,
-        role="router_ft", name="finetuned_nano", schema=TIER_ONLY_SCHEMA,
-    )
-
-
-ROUTERS: dict[str, RouterFactory] = {"zero_shot": _zero_shot, "finetuned": _finetuned}
+ROUTERS: dict[str, RouterFactory] = {"zero_shot": _zero_shot}
 
 
 def register_router(name: str, factory: RouterFactory) -> None:
