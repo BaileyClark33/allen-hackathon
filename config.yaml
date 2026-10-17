@@ -24,16 +24,6 @@ models:
     base_url: null
     input_usd_per_mtok: 1.00
     output_usd_per_mtok: 3.00
-  # Fine-tuned Nano router, self-hosted with vLLM on a Nebius AI Cloud VM (training/serve.sh).
-  # Set base_url to the VM endpoint, e.g. http://<vm-ip>:8000/v1/. Priced at Nano's Token Factory
-  # rate so router cost stays comparable to the zero-shot router; GPU hours are billed separately.
-  nano_ft:
-    id: nemoroute-router-ft
-    base_url: null
-    api_key_env: ROUTER_FT_API_KEY
-    billing: nebius_ai_cloud
-    input_usd_per_mtok: 0.06
-    output_usd_per_mtok: 0.24
   # Closed frontier model, used only as an evaluation reference (never in the product path).
   reference:
     id: claude-opus-5-5
@@ -65,11 +55,6 @@ roles:
     thinking: false
     max_tokens: 1500
     temperature: 0.3
-  router_ft:
-    model: nano_ft
-    thinking: false
-    max_tokens: 20
-    temperature: 0.0
   reference:
     model: reference
     thinking: true
@@ -99,7 +84,6 @@ tier_roles:
 
 estimates:
   router: {input: 450, output: 60}
-  router_ft: {input: 150, output: 8}
   reference: {input: 120, output: 2500}
   reference_judge: {input: 1400, output: 2500}
   tier1: {input: 120, output: 700}
@@ -168,7 +152,7 @@ split:
   test_frac: 0.2
 
 router:
-  type: zero_shot  # zero_shot | finetuned
+  type: zero_shot
 
 evaluation:
   bootstrap_samples: 2000

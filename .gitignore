@@ -8,5 +8,4 @@ venv/
 *.egg-info/
 .streamlit/secrets.toml
 .DS_Store
-runs/
 data/public/*.parquet
