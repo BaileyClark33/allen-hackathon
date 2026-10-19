@@ -68,6 +68,11 @@ def plan_batches(
     return specs
 
 
+def last_id_number(existing: list[dict]) -> int:
+    """Highest numeric id suffix, so new ids never collide after rows are removed."""
+    return max((int(r["id"].rsplit("-", 1)[1]) for r in existing), default=0)
+
+
 def estimate_generator_calls(needed: dict[int, int], batch_size: int) -> int:
     return sum(math.ceil(n / batch_size) for n in needed.values() if n > 0)
 
@@ -107,7 +112,7 @@ def run_generation(
             break
         specs = plan_batches(needed, gen.batch_size, gen.subdomains, gen.personas, rng)
         known = all_query_texts(cfg)
-        next_index = len(existing)
+        next_index = last_id_number(existing)
         stop = False
         with ThreadPoolExecutor(max_workers=gen.concurrency) as pool:
             futures = {}
