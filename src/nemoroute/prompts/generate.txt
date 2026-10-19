@@ -7,13 +7,21 @@ Every question must be Level $tier as defined below.
 Definitions of all three levels, so you can stay inside the requested one:
 - Level 1 (simple): a definition, a factual lookup, or a single well-known concept. One short paragraph answers it fully. Example: "What is the difference between gross margin and contribution margin?"
 - Level 2 (medium): applying a standard framework or doing a structured analysis of a clearly specified situation. Needs organized multi-part reasoning but no deep judgment calls. Example: "Walk me through a Porter's Five Forces analysis for a regional craft brewery."
-- Level 3 (hard): multi-step strategy, market sizing with explicit assumptions, trade-offs under ambiguity, or recommendations that need judgment across several interacting factors. Example: "A mid-size European logistics firm is weighing entry into last-mile drone delivery in two US metros. Estimate the 5-year addressable market, outline the key risks, and recommend whether and how to enter."
+- Level 3 (hard): multi-step strategy, market sizing with explicit assumptions, trade-offs under ambiguity, or recommendations that need judgment across several interacting factors. Example: "A mid-size European logistics firm is weighing entry into last-mile drone delivery in two US metros. Should they enter, and if so how? Show the market-sizing assumptions behind your recommendation."
 
 Requirements:
 - Vary phrasing, length, industries, company sizes, and geographies.
 - Write the way real users write: some terse, some with context; no numbering inside the question text.
 - Each question must be self-contained and answerable in text without browsing the web.
-- Do not repeat or lightly paraphrase these existing questions:
+- Invented client details (company size, revenue, margins, growth, internal data) are fine. Do not state facts about the outside world: no specific laws, regulations, regulators, rulings, tax credits, or market statistics presented as true. If the scenario needs one, introduce it as an assumption ("assume...", "our team estimates...").
+- Name only well-established frameworks, and only one that genuinely fits the situation and the topic. Never invent or quote a framework name. It is fine for a question to name no framework at all.
+- Give every number a clear meaning (for example "15% of the sales team is expected to leave", not "15% retention risk"), and do not ask about data the question never provides (such as "each SKU cluster" when no clusters are listed).
+- One primary ask per question. A Level 2 or Level 3 question may ask for one analysis or recommendation and the reasoning behind it, but not a list of separate deliverables.
+- Keep the asker's situation consistent: only mention a fund, deal team or portfolio if the question establishes one. Spell out niche acronyms the first time they appear.
+- Do not presuppose the answer or invite agreement (avoid "why is X the right move" or "confirm that X"). Ask neutrally.
+- Before returning, reread every question. Rewrite any sentence that states a law, regulation, quota, legal requirement or market statistic without "assume" or an attribution to the asker's own team or advisers.
+- Write the questions from the persona's own point of view and about the requested topic.
+- The existing questions below are already in the dataset. Do not repeat them, paraphrase them, or reuse their scenarios, company types, frameworks or sentence structure. Treat them as a list of what to avoid, not as templates:
 $avoid
 
 Return only JSON in this exact shape, with no other text:
