@@ -7,7 +7,7 @@ import pytest
 from fakes import FakeClient
 
 from nemoroute.dataset.dedup import dedup
-from nemoroute.dataset.generate import cap_by_limit, needed_per_tier
+from nemoroute.dataset.generate import cap_by_limit, last_id_number, needed_per_tier
 from nemoroute.human_agreement import agreement, stratified_sample
 from nemoroute.parsing import JsonParseError, extract_json, split_reasoning
 from nemoroute.routers.zero_shot import ZeroShotRouter
@@ -44,6 +44,11 @@ def test_generation_balances_tiers_and_respects_limit():
     assert needed == {1: 15, 2: 20, 3: 20}
     assert cap_by_limit(needed, 20) == {1: 7, 2: 7, 3: 6}
     assert cap_by_limit({1: 1, 2: 0, 3: 10}, 5) == {1: 1, 2: 0, 3: 4}
+
+
+def test_last_id_number_survives_removed_rows():
+    assert last_id_number([]) == 0
+    assert last_id_number([{"id": "cal-0001"}, {"id": "cal-0007"}, {"id": "cal-0003"}]) == 7
 
 
 def test_router_parses_and_falls_back_to_top_tier():
