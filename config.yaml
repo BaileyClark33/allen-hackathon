@@ -43,17 +43,17 @@ roles:
   tier1:
     model: nano
     thinking: false
-    max_tokens: 1500
+    max_tokens: 5000
     temperature: 0.3
   tier2:
     model: super
     thinking: false
-    max_tokens: 1500
+    max_tokens: 16000
     temperature: 0.3
   tier3:
     model: ultra
     thinking: false
-    max_tokens: 1500
+    max_tokens: 7000
     temperature: 0.3
   reference:
     model: reference
@@ -68,7 +68,7 @@ roles:
   judge:
     model: ultra
     thinking: true
-    max_tokens: 8000
+    max_tokens: 16000
     temperature: 0.6
     top_p: 0.95
   generator:
@@ -109,7 +109,7 @@ datasets:
 
 generation:
   batch_size: 10
-  dedup_cosine_threshold: 0.85
+  dedup_cosine_threshold: 0.5
   seed: 7
   concurrency: 4
   max_rounds: 6
