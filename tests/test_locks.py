@@ -21,9 +21,8 @@ def run_script(name: str, *args: str) -> subprocess.CompletedProcess:
 
 
 def test_write_locked_thresholds_only_touches_locked_line(tmp_path):
-    config_path = tmp_path / "config.yaml"
-    original = (ROOT / "config.yaml").read_text()
-    config_path.write_text(original)
+    config_path = write_config(tmp_path, make_config(tmp_path))
+    original = config_path.read_text()
     write_locked_thresholds(3.75, 4, "calibration", config_path)
     updated = config_path.read_text()
     changed = [(a, b) for a, b in zip(original.splitlines(), updated.splitlines()) if a != b]
