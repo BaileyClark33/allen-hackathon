@@ -63,7 +63,10 @@ def generate_questions(
     )
     payload = extract_json(result.content)
     questions = payload.get("questions", []) if isinstance(payload, dict) else payload
-    return [q.strip() for q in questions if isinstance(q, str) and q.strip()]
+    cleaned = [q.strip() for q in questions if isinstance(q, str) and q.strip()]
+    if len(cleaned) > GENERATED_COUNT:
+        print(f"Generator returned {len(cleaned)} questions; keeping the first {GENERATED_COUNT}.")
+    return cleaned[:GENERATED_COUNT]
 
 
 def merge_prompts(generated: list[str], handwritten: list[dict]) -> list[dict]:

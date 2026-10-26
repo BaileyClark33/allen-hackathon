@@ -49,6 +49,15 @@ def test_merge_generates_forty_stable_unique_prompts(tmp_path):
     assert "subdomain" not in records[0]
 
 
+def test_generate_questions_trims_extras_to_twenty_five(tmp_path):
+    cfg = make_config(tmp_path)
+    client = FakeClient(lambda role, messages: json.dumps({"questions": generated_questions(26)}))
+    template = load_prompt(cfg, "memo_generate")
+    generated = memo_bench.generate_questions(client, template, cfg.generation.subdomains, [])
+    assert len(generated) == 25
+    assert generated[-1] == "Generated memo question 25?"
+
+
 def test_refuses_to_overwrite_existing_prompts(tmp_path):
     path = tmp_path / "prompts.jsonl"
     path.write_text('{"id": "m001"}\n')
