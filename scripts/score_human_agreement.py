@@ -5,20 +5,32 @@ import json
 from nemoroute.cli import base_parser, setup
 from nemoroute.config import active_thresholds
 from nemoroute.datasets import dataset_paths, human_files
-from nemoroute.human_agreement import agreement, read_human_labels
+from nemoroute.human_agreement import (
+    agreement,
+    read_human_labels,
+    render_agreement_section,
+    write_agreement_section,
+)
 from nemoroute.jsonl import read_jsonl
 
 
 def main() -> None:
     parser = base_parser("Compare human pass/fail labels with the LLM judge.")
-    parser.add_argument("--target", required=True, choices=["calibration", "test"])
+    parser.add_argument("--target", required=True, choices=["calibration", "test", "memo"])
     args = parser.parse_args()
     cfg, _ = setup(args)
     csv_path, key_path = human_files(cfg, args.target)
     if not csv_path.exists():
         raise SystemExit(f"{csv_path} not found. Run scripts/sample_for_human.py --target {args.target} first.")
-    dataset = "calibration" if args.target == "calibration" else "full"
-    judgments = read_jsonl(dataset_paths(cfg, dataset).judgments)
+    if args.target == "memo":
+        memo_dir = cfg.path("data/memo_bench")
+        judgments = [
+            {**j, "tier": j.get("strategy", j.get("tier"))}
+            for j in read_jsonl(memo_dir / "memo_judgments.jsonl")
+        ]
+    else:
+        dataset = "calibration" if args.target == "calibration" else "full"
+        judgments = read_jsonl(dataset_paths(cfg, dataset).judgments)
     human = read_human_labels(csv_path, key_path)
     threshold, min_acc = active_thresholds(cfg)
     stats = agreement(human, judgments, threshold, min_acc)
@@ -29,6 +41,13 @@ def main() -> None:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(stats, indent=2))
     print(f"Saved to {out}")
+    if args.target == "memo":
+        report = cfg.path(cfg.paths.results_dir) / "memo_results.md"
+        if report.exists():
+            write_agreement_section(report, render_agreement_section(stats))
+            print(f"Updated {report}")
+        else:
+            print(f"{report} not found; wrote the JSON only. Run scripts/evaluate_memos.py first.")
 
 
 if __name__ == "__main__":

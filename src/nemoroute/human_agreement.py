@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import csv
+import math
 import random
+import re
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable
@@ -53,6 +55,30 @@ def answer_candidates(
     return out
 
 
+def memo_candidates(
+    memos: list[dict[str, Any]],
+    judgments: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    judged = index_by(judgments, "query_id", "strategy")
+    out: dict[tuple[str, str], dict[str, Any]] = {}
+    for memo in memos:
+        key = (memo["query_id"], memo["strategy"])
+        if key not in judged:
+            continue
+        question = memo.get("question") or memo.get("query", "")
+        text = memo.get("memo_md") or memo.get("memo") or memo.get("answer", "")
+        out[key] = {
+            **memo,
+            "question": question,
+            "query": question,
+            "memo_md": text,
+            "answer": text,
+            "tier": memo["strategy"],  # agreement() keys on (query_id, tier)
+            "judgment": judged[key],
+        }
+    return list(out.values())
+
+
 def write_human_files(sample: list[dict[str, Any]], csv_path: Path, key_path: Path, overwrite: bool) -> None:
     if csv_path.exists() and not overwrite:
         raise SystemExit(f"{csv_path} already exists (it may contain your labels). Pass --force to overwrite.")
@@ -65,7 +91,12 @@ def write_human_files(sample: list[dict[str, Any]], csv_path: Path, key_path: Pa
             item_id = f"h{i:03d}"
             writer.writerow({"item_id": item_id, "query": item["query"], "answer": item["answer"],
                              "human_pass": "", "notes": ""})
-            keys.append({"item_id": item_id, "query_id": item["query_id"], "tier": item["tier"]})
+            key = {"item_id": item_id, "query_id": item["query_id"]}
+            if "tier" in item:
+                key["tier"] = item["tier"]
+            if "strategy" in item:
+                key["strategy"] = item["strategy"]
+            keys.append(key)
     write_jsonl(key_path, keys)
 
 
@@ -87,7 +118,8 @@ def read_human_labels(csv_path: Path, key_path: Path) -> list[dict[str, Any]]:
             if verdict is None:
                 continue
             key = keys[row["item_id"]]
-            rows.append({"query_id": key["query_id"], "tier": key["tier"], "human_pass": verdict})
+            tier = key.get("tier", key.get("strategy"))
+            rows.append({"query_id": key["query_id"], "tier": tier, "human_pass": verdict})
     return rows
 
 
@@ -114,3 +146,36 @@ def agreement(
         "human_pass_judge_fail": sum(a and not b for a, b in zip(h, j)),
         "human_fail_judge_pass": sum((not a) and b for a, b in zip(h, j)),
     }
+
+
+def render_agreement_section(stats: dict[str, Any]) -> str:
+    pct = "n/a" if math.isnan(stats["percent_agreement"]) else f"{stats['percent_agreement']:.1%}"
+    kappa = "n/a" if math.isnan(stats["cohen_kappa"]) else f"{stats['cohen_kappa']:.3f}"
+    return "\n".join([
+        "## Human agreement",
+        "",
+        f"Human pass/fail labels vs the judge on {stats['n']} memos "
+        f"(pass threshold {stats['pass_threshold']:.2f}, min accuracy {stats['min_accuracy']}).",
+        "",
+        "| Metric | Value |",
+        "|---|---|",
+        f"| Percent agreement | {pct} |",
+        f"| Cohen's kappa | {kappa} |",
+        f"| n | {stats['n']} |",
+        f"| Both pass | {stats['both_pass']} |",
+        f"| Both fail | {stats['both_fail']} |",
+        f"| Human pass, judge fail | {stats['human_pass_judge_fail']} |",
+        f"| Human fail, judge pass | {stats['human_fail_judge_pass']} |",
+    ])
+
+
+_SECTION = re.compile(r"(?ms)^## Human agreement[^\n]*\n?.*?(?=^## |\Z)")
+
+
+def write_agreement_section(path: Path, section: str) -> None:
+    text = path.read_text() if path.exists() else ""
+    if _SECTION.search(text):
+        text = _SECTION.sub(lambda _: section + "\n\n", text, count=1)
+    else:
+        text = text.rstrip() + ("\n\n" if text.strip() else "") + section + "\n"
+    path.write_text(text.rstrip() + "\n")
