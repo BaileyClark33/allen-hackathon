@@ -29,7 +29,24 @@ class JudgeTask:
 
 
 def select_queries(queries: list[dict[str, Any]], limit: int | None) -> list[dict[str, Any]]:
-    return queries if limit is None else queries[:limit]
+    if limit is None:
+        return queries
+    # Generation writes one tier at a time, so a plain prefix would sample a single tier.
+    buckets: dict[Any, list[dict[str, Any]]] = {}
+    for query in queries:
+        buckets.setdefault(query.get("intended_tier"), []).append(query)
+    selected: list[dict[str, Any]] = []
+    depth = 0
+    while len(selected) < limit:
+        added = False
+        for bucket in buckets.values():
+            if depth < len(bucket) and len(selected) < limit:
+                selected.append(bucket[depth])
+                added = True
+        if not added:
+            break
+        depth += 1
+    return selected
 
 
 def pending_answers(

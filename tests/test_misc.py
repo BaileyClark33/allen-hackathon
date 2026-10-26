@@ -9,6 +9,7 @@ from fakes import FakeClient
 from nemoroute.dataset.dedup import dedup
 from nemoroute.dataset.generate import cap_by_limit, last_id_number, needed_per_tier
 from nemoroute.human_agreement import agreement, stratified_sample
+from nemoroute.labeling.pipeline import select_queries
 from nemoroute.parsing import JsonParseError, extract_json, split_reasoning
 from nemoroute.routers.zero_shot import ZeroShotRouter
 
@@ -90,3 +91,13 @@ def test_agreement_stats():
     assert stats["percent_agreement"] == pytest.approx(0.75)
     assert stats["human_fail_judge_pass"] == 1
     assert stats["cohen_kappa"] == pytest.approx(0.5)
+
+
+def test_select_queries_spreads_a_dry_run_across_tiers():
+    queries = [{"id": f"q{t}-{i}", "intended_tier": t} for t in (1, 2, 3) for i in range(10)]
+    assert [q["intended_tier"] for q in select_queries(queries, 6)] == [1, 2, 3, 1, 2, 3]
+    assert len(select_queries(queries, 100)) == 30
+    assert select_queries(queries, None) is queries
+
+    uneven = [{"intended_tier": 1}] * 3 + [{"intended_tier": 2}]
+    assert [q["intended_tier"] for q in select_queries(uneven, 4)] == [1, 2, 1, 1]
