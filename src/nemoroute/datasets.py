@@ -47,6 +47,9 @@ def human_files(cfg: Config, target: str) -> tuple[Path, Path]:
     if target == "calibration":
         paths = dataset_paths(cfg, "calibration")
         return paths.human_csv, paths.human_key
+    if target == "memo":
+        memo_dir = cfg.path("data/memo_bench")
+        return memo_dir / "memo_human.csv", memo_dir / "memo_human_key.jsonl"
     splits_dir = cfg.path(cfg.paths.splits_dir)
     return splits_dir / "test_human.csv", splits_dir / "test_human_key.jsonl"
 
