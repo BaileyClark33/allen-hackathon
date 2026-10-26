@@ -45,14 +45,20 @@ failures; an overwrite of a frozen artifact (`data/splits/test.jsonl`,
 |---|---|---|---|---|
 | Oct 25 | start | — | — | $5.5486 |
 | Oct 25 | A2.1 full labeling | $19.1122 | $17.9709 | $23.5194 |
+| Oct 25 | A3.1 router evaluation | $0.0050 | $0.0036 | $23.5230 |
+| Oct 25 | A3b.1 MMLU dry run (20) | $0.1908 | $0.0474 | $23.5704 |
+| Oct 25 | A3b.2 MMLU full (300) | $2.6147 | $0.5492 | $24.1197 |
+| Oct 25 | A4.3 memo prompt freeze | $0.0036 | $0.0125 | $24.1367 |
 
 A2 chunk total: $2.53 before + $17.9709 = **$20.50 of $35**.
+A3 total: **$0.0036 of $3**. A3b total: **$0.5966 of $3**. A4 total so far: **$0.0125 of $12**
+(includes a $0.0036 generator call that returned 26 questions and was rejected before writing).
 
 ## Wave log
 
 - **Wave 0: done.** Runbook, branch `a2-a6-results`, draft PR #5, lock `(4.0, 5)`, Tavily key path verified.
 - **Wave 1 (A2): done.** 600/600 labels: tier 1 209 (34.8%), tier 2 168 (28.0%), tier 3 88 (14.7%), unresolved 135 (22.5%). Confusion (intended rows → label): T1 160/32/6/2, T2 21/76/42/61, T3 28/60/40/72. Tier 3 is 14.7%, marginally under the roadmap's 15% heuristic; no re-generation (spend already committed). Truncation audit: 19 truncated answers, all fail, 0 deciding passes, forcing all to fail changes 0 labels → label-neutral. Split: seed 42, 371 train / 121 test (test 20.2%; test mix 42/34/18/27), disjoint, calibration excluded, `split_meta.json` written.
-- **Wave 2 (A3/A3b):** pending.
-- **Wave 3 (A4):** pending.
-- **Wave 4 (A5):** pending.
-- **Wave 5 (A6):** pending.
+- **Wave 2 (A3/A3b): done.** Router: accuracy 59.6% (95% CI 50.0–70.2), under-routing 9.6% (below 15%, no prompt edits), over-routing 30.9%; cost 58% of all-Ultra on resolved items (66% on all items); pass rate 79.8% vs all-Ultra 77.7% on resolved (62.0% vs 60.3% on all). MMLU-Pro: 300 frozen items, 1 unparseable tier answer (0.1%); all-Nano 66.7%, all-Super 88.7%, all-Ultra 88.7%, router 68.0% at 15% of all-Ultra cost, oracle 92.0%.
+- **Wave 3 (A4): code + frozen prompts done; live blocked on B2.** 40 prompts (25 generated + 15 handwritten), unique, SHA256 `791ec5c5b60a966546c392f13173ae418610600dac48c4411f3c7c3eed0c495d`. Evaluation estimate for 120 memos + 120 judgments: **$1.8352**, inside A4. B1/B2 files still absent on Oct 25; gate at Oct 26 18:00.
+- **Wave 4 (A5): code done; blocked on memo outputs.** `--target memo` sampling/scoring and tests are committed.
+- **Wave 5 (A6):** pending memo results; routing and MMLU evidence already in `results/`.
