@@ -9,3 +9,6 @@ venv/
 .streamlit/secrets.toml
 .DS_Store
 data/public/*.parquet
+
+# Local datasets and frozen benchmark artifacts (too large for git)
+data/
