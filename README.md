@@ -1,10 +1,10 @@
 # allen-hackathon
 
-**Nemotron consulting router.** A small, fast NVIDIA Nemotron model reads each consulting or business-strategy question and routes it to the cheapest Nemotron model that can answer it well. All models are served at runtime by the **Nebius Token Factory** inference API.
+**Nemotron research memo agent.** A junior consultant asks a business-strategy question; the agent plans web searches (Tavily), extracts numbered facts from the sources, and writes a cited memo (bottom line, key findings, analysis, risks, next steps). A small, fast NVIDIA Nemotron router reads the question first and sends the memo-writing step to the cheapest Nemotron model that can do it well. All models are served at runtime by the **Nebius Token Factory** inference API.
 
 Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
-> **Project direction and task split:** see [`docs/ROADMAP.md`](docs/ROADMAP.md). The router is becoming the engine of a research memo agent for junior consultants. This README describes the current code.
+> **Project direction and task split:** see [`docs/ROADMAP.md`](docs/ROADMAP.md). The memo pipeline is `src/nemoroute/agent/memo.py` (route → plan → search → extract → synthesize); the router underneath it is evaluated on its own below.
 
 | Tier | Model (Token Factory ID) | Handles |
 |---|---|---|
@@ -14,7 +14,30 @@ Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
 ## Results
 
-**Memo benchmark (routed vs all-Ultra vs all-Nano): pending B2.** The routing and public-benchmark results below are final.
+**Routed memos score 4.13 [3.96–4.29] vs all-Ultra 4.41 [4.28–4.53] at 28% of the all-Ultra cost ($0.00576 vs $0.02045 per memo).** Routing saves 72% of memo cost but gives up quality, and the gap traces mostly to the Nano extract step rather than to the router's tier choice (see below).
+
+### Research memo benchmark
+
+40 frozen consulting questions (25 generated, 15 hand-written), each run under all three strategies and judged blind by Ultra on accuracy, completeness, structure, actionability and grounding. For each question, Nano plans the searches once and every strategy gets the identical frozen sources. Memo cost covers every pipeline call (route, plan, extract, synthesize). Full report: [`results/memo_results.md`](results/memo_results.md).
+
+| Strategy | n | Cost/memo | % of all-Ultra | Mean score | Pass rate (memo rule) | Pass rate (locked rule) | p50 latency |
+|---|---|---|---|---|---|---|---|
+| all-Nano | 39 | $0.00133 | 7% | 3.85 [3.65–4.05] | 25.6% [12.8–38.5] | 10.3% [2.6–20.5] | 43.91 s |
+| all-Ultra | 40 | $0.02045 | 100% | 4.41 [4.28–4.53] | 62.5% [47.5–77.5] | 15.0% [5.0–27.5] | 27.17 s |
+| **routed** | **40** | **$0.00576** | **28%** | **4.13 [3.96–4.29]** | **32.5% [17.5–47.5]** | **12.5% [2.5–22.5]** | **37.64 s** |
+
+95% bootstrap CIs.
+- **Memo rule:** mean ≥ 4.0 and accuracy ≥ 4. This is the labeling config's pre-calibration default, chosen before the full run.
+- **Locked rule:** the calibrated labeling rule, mean ≥ 4.0 and accuracy ≥ 5. Few multi-claim memos reach it.
+- **Excluded memo:** one all-Nano memo is excluded because its extract step was cut off at the token limit twice.
+
+**Where routed loses quality.** The router sent 25 memos to Ultra, 15 to Super and none to Nano. On the 25 Ultra-routed questions, both strategies write the memo with Ultra, yet routed scores 4.06 vs 4.33. Routed is worse on 16 of those questions and better on 6. The gap is mostly accuracy (3.04 vs 3.60) and grounding (2.68 vs 3.24), the two criteria that depend on the extracted facts. Running extract on a larger model is the obvious next experiment.
+
+Human agreement with the judge on 30 blind memos: *pending (labels in progress)*.
+
+![Cost vs quality per memo](results/charts/cost_vs_quality_memos.png)
+
+![Tier the router picked for each memo](results/charts/tier_mix_memos.png)
 
 ### Held-out consulting test set
 
@@ -175,6 +198,11 @@ What each command does:
   - absolute rubric scores rather than pairwise comparison
   - a human-agreement check on the test set
 - **Labels depend on the judge.** They reflect this judge, rubric and threshold, not ground truth.
+- **Memo benchmark caveats:**
+  - **Small sample.** n = 40 questions per strategy, so the CIs are wide.
+  - **Two pass rules.** The headline pass rate uses a memo-specific rule (accuracy ≥ 4) rather than the locked labeling rule (accuracy ≥ 5); both are reported.
+  - **all-Ultra plans with Nano.** It is all-Ultra except for the shared planning step, so that all strategies see the same sources.
+  - **Failures kept in the results.** One all-Nano memo failed twice and is excluded. One memo's synthesis was cut off at the token limit and is scored as is. One all-Nano memo has no citations and is also scored as is.
 - **No fine-tuning.** Token Factory can't fine-tune Nemotron, and hosting custom weights live through judging isn't affordable, so the router is prompted rather than trained (see `docs/ROADMAP.md`).
 - **The closed reference model is for evaluation only.** It never answers in the product path. It runs at its default thinking depth (effort `medium`), while the Nemotron tiers answer with reasoning off. Refusals are recorded as empty answers and score as fails.
 
