@@ -9,3 +9,4 @@ venv/
 .streamlit/secrets.toml
 .DS_Store
 data/public/*.parquet
+data/search_cache/
