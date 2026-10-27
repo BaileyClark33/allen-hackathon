@@ -334,7 +334,7 @@ def render_report(
         "",
         f"Pass rate above uses the memo rule (mean >= {memo_rule[0]}, accuracy >= {memo_rule[1]}). This is the "
         "labeling config's pre-calibration default; calibration tightened routing labels to accuracy >= 5, "
-        "which a multi-claim memo rarely meets (the 3-prompt dry run passed 0% under it for every strategy).",
+        "a bar a multi-claim memo rarely meets, so that stricter rule is reported separately below.",
         "",
         f"Pass rate under the locked labeling rule (mean >= {locked_rule[0]}, accuracy >= {locked_rule[1]}):",
         "",
