@@ -127,6 +127,9 @@ class TavilySearchClient:
         return [Source(**entry) for entry in payload["sources"]]
 
     def _write_cache(self, normalized: str, sources: list[Source]) -> None:
-        self.cache_dir.mkdir(parents=True, exist_ok=True)
-        payload = {"query": normalized, "sources": [asdict(source) for source in sources]}
-        self._cache_path(normalized).write_text(json.dumps(payload, indent=2))
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            payload = {"query": normalized, "sources": [asdict(source) for source in sources]}
+            self._cache_path(normalized).write_text(json.dumps(payload, indent=2))
+        except (PermissionError, OSError):
+            pass  # read-only filesystem (e.g. Streamlit Cloud) — cache is optional

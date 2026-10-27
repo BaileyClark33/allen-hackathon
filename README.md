@@ -186,6 +186,15 @@ pytest
 
 Tests use a fake client and make no API calls.
 
+## Deploying
+
+The app is live at **[INSERT YOUR STREAMLIT CLOUD URL HERE]**.
+
+- Entry point: `app/streamlit_app.py`
+- Python ≥ 3.11
+- Secrets: `NEBIUS_API_KEY` (low-limit Token Factory key) and `TAVILY_API_KEY` (Tavily search key)
+- Writable paths fall back to `/tmp` when the repo directory is read-only
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
