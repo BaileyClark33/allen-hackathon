@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 import csv
+import importlib.util
+from pathlib import Path
 from collections import Counter
 
 import pytest
 from fakes import make_config
 
+from nemoroute.config import LockedThresholds
 from nemoroute.datasets import human_files
 from nemoroute.human_agreement import (
     HUMAN_COLUMNS,
@@ -176,3 +179,19 @@ def test_human_files_memo_paths(tmp_path, monkeypatch):
     csv_path, key_path = human_files(cfg, "memo")
     assert csv_path == tmp_path / "data" / "memo_bench" / "memo_human.csv"
     assert key_path == tmp_path / "data" / "memo_bench" / "memo_human_key.jsonl"
+
+
+def test_memo_agreement_uses_memo_rule_not_locked_rule(tmp_path):
+    script = Path(__file__).resolve().parents[1] / "scripts" / "score_human_agreement.py"
+    spec = importlib.util.spec_from_file_location("score_human_agreement", script)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    cfg = make_config(tmp_path)
+    cfg.labeling.locked = LockedThresholds(
+        pass_threshold=4.0, min_accuracy=5, locked_at="2026-10-21T00:00:00+00:00", source="calibration"
+    )
+
+    assert module.thresholds_for(cfg, "memo") == (cfg.memo_bench.pass_threshold, cfg.memo_bench.min_accuracy)
+    assert module.thresholds_for(cfg, "memo") == (4.0, 4)
+    assert module.thresholds_for(cfg, "test") == (4.0, 5)
+    assert module.thresholds_for(cfg, "calibration") == (4.0, 5)

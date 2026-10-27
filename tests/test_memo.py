@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from nemoroute.agent.memo import MemoResult, StepTrace, run_memo, VALID_STRATEGIES
+from nemoroute.agent.memo import MemoResult, StepTrace, run_memo, gather_evidence, VALID_STRATEGIES
 from nemoroute.config import Config
 from nemoroute.routers.base import RoutingDecision, Router
 from nemoroute.search import Source
@@ -363,3 +363,57 @@ class TestRoutedStrategyFields:
 
         assert result.route_tier == 3
         assert "Complex" in result.route_reasoning
+
+
+class _FixedRouter:
+    name = "test"
+    role = "router"
+
+    def route(self, query: str) -> RoutingDecision:
+        return RoutingDecision(tier=2, reasoning="fixed")
+
+
+class TestSharedEvidence:
+    def test_gather_evidence_plans_with_given_role(self, tmp_path: Path):
+        cfg = make_config(tmp_path)
+        client = StepTrackingClient()
+
+        evidence = gather_evidence("test", cfg, client, StepTrackingSearch(), role="tier1")
+
+        assert client.step_roles == [("tier1", "plan")]
+        assert evidence.queries == ["alpha strategy", "beta analysis"]
+        assert evidence.plan_step.name == "plan" and evidence.plan_step.tier == 1
+        assert evidence.search_step.name == "search"
+        assert len(evidence.sources) == 4
+
+    def test_evidence_skips_plan_and_search(self, tmp_path: Path):
+        cfg = make_config(tmp_path)
+        evidence = gather_evidence("test", cfg, StepTrackingClient(), StepTrackingSearch())
+        client = StepTrackingClient()
+        search = StepTrackingSearch()
+
+        result = run_memo("test", "all_ultra", cfg, client, search, evidence=evidence)
+
+        assert client.step_roles == [("tier3", "extract"), ("tier3", "synthesize")]
+        assert search.calls == []
+        assert [s.name for s in result.steps] == ["plan", "search", "extract", "synthesize"]
+        assert result.steps[0] is evidence.plan_step
+        assert result.total_cost_usd == pytest.approx(sum(s.cost_usd for s in result.steps))
+
+    def test_all_strategies_share_sources(self, tmp_path: Path):
+        cfg = make_config(tmp_path)
+        evidence = gather_evidence("test", cfg, StepTrackingClient(), StepTrackingSearch())
+
+        urls = {
+            strategy: [
+                s.url
+                for s in run_memo(
+                    "test", strategy, cfg, StepTrackingClient(), StepTrackingSearch(), _FixedRouter(),
+                    evidence=evidence,
+                ).sources
+            ]
+            for strategy in sorted(VALID_STRATEGIES)
+        }
+
+        assert len({tuple(u) for u in urls.values()}) == 1
+        assert urls["routed"] == [s.url for s in evidence.sources]
