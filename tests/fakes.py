@@ -7,6 +7,7 @@ import yaml
 
 from nemoroute.client import ChatResult
 from nemoroute.config import Config, load_config
+from nemoroute.search import Source
 
 
 class FakeClient:
@@ -28,6 +29,25 @@ class FakeClient:
             role=role,
             finish_reason="stop",
         )
+
+
+class FakeSearchClient:
+    def __init__(self, responder: Callable[[str], list[Source]] | None = None) -> None:
+        self.responder = responder
+        self.calls: list[str] = []
+
+    def search(self, query: str) -> list[Source]:
+        self.calls.append(query)
+        if self.responder is not None:
+            return self.responder(query)
+        return [
+            Source(
+                url=f"https://example.com/{index}",
+                title=f"Result {index} for {query}",
+                snippet=f"Canned snippet {index} about {query}.",
+            )
+            for index in range(3)
+        ]
 
 
 def make_config(tmp_path: Path) -> Config:
