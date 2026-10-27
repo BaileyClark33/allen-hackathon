@@ -22,11 +22,17 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
 
 
 def append_jsonl(path: Path, record: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    except (PermissionError, OSError):
+        return  # read-only filesystem (e.g. Streamlit Cloud) — silently skip logging
     line = json.dumps(record, ensure_ascii=False)
-    with _write_lock, open(path, "a") as f:
-        f.write(line + "\n")
-        f.flush()
+    try:
+        with _write_lock, open(path, "a") as f:
+            f.write(line + "\n")
+            f.flush()
+    except (PermissionError, OSError):
+        pass  # read-only filesystem — silently skip logging
 
 
 def write_jsonl(path: Path, records: Iterable[dict[str, Any]]) -> None:
