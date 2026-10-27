@@ -1,0 +1,19 @@
+You are building a frozen benchmark of research questions for an AI analyst that writes cited business research memos after live web research.
+
+Write $n distinct, memo-style research questions that a junior consultant would take to a research memo. Each question must need web research and a written analysis, not a one-paragraph answer.
+
+Cover the topic areas below, using every area at least once and no area more than three times:
+$subdomains
+
+Requirements:
+- Each question asks for one decision, assessment or recommendation, not a list of separate deliverables.
+- Ground every question in a specific, realistic situation: name the industry, company type, geography and decision at stake where it helps. Invented client details (company size, revenue, margins, growth) are fine.
+- Do not state facts about the outside world as true: no specific laws, regulations, regulators, rulings, tax credits or market statistics. If the scenario needs one, introduce it as an assumption ("assume...", "our team estimates...").
+- Vary industries, company sizes, geographies, time horizons and phrasing. Some questions terse, some with context.
+- Questions must be self-contained and neutral: do not presuppose the answer or invite agreement.
+- Do not number the questions inside the question text.
+- Do not repeat or paraphrase any of the existing questions below:
+$avoid
+
+Return only JSON in this exact shape, with no other text:
+{"questions": ["question 1", "question 2"]}

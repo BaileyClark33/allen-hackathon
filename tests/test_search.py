@@ -73,7 +73,11 @@ def test_cache_survives_without_api_key_on_second_client(tmp_path, monkeypatch):
 
 
 def test_missing_api_key_fails_loud_on_cache_miss(tmp_path, monkeypatch):
-    monkeypatch.delenv("TAVILY_API_KEY", raising=False)
+    def missing_key(*_args, **_kwargs):
+        raise RuntimeError("TAVILY_API_KEY is not set")
+
+    # api_key() reloads .env, so patch the lookup instead of deleting the env var.
+    monkeypatch.setattr("nemoroute.search.api_key", missing_key)
     client = TavilySearchClient(make_config(tmp_path), cache_dir=tmp_path / "cache")
     with pytest.raises(RuntimeError):
         client.search("no cached results here")

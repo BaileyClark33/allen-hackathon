@@ -139,7 +139,7 @@ labeling:
   min_accuracy: 4
   collapse_warn_frac: 0.6
   concurrency: 4
-  locked: null
+  locked: {pass_threshold: 4.0, min_accuracy: 5, locked_at: '2026-10-21T02:54:17+00:00', source: calibration}
 
 tuning:
   pass_threshold_grid: [3.0, 3.25, 3.5, 3.75, 4.0, 4.25, 4.5, 4.75]

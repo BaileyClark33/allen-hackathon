@@ -59,6 +59,8 @@ def make_config(tmp_path: Path) -> Config:
     data["paths"]["results_dir"] = str(tmp_path / "results")
     for name in data["datasets"]:
         data["datasets"][name]["dir"] = str(tmp_path / name)
+    # Tests must not inherit the live config's lock; they set it explicitly when needed.
+    data["labeling"]["locked"] = None
     return Config.model_validate(data)
 
 

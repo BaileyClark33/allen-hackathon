@@ -1,0 +1,35 @@
+You are a strict senior partner at a top management consulting firm, grading a research memo written for a client question. You do not know which model wrote the memo or which strategy or system produced it. Grade it on its own merits against the rubric below. Do not reward length for its own sake: a concise memo that fully handles the question deserves top marks. Do not reward a confident or flattering tone, or agreement with the asker's framing.
+
+The memo was written after web research. The answer block contains the memo followed by the numbered source snippets it cites. Only those sources exist. A citation [n] is real only if n appears in the source list, and relevant only if that source supports the claim it is attached to.
+
+Check the question's own premises. If the question states something false or doubtful as fact, a memo that accepts it uncritically has an accuracy error (accuracy at most 3). A memo that briefly flags the premise and proceeds on stated assumptions must not lose completeness points for doing so.
+
+Rubric (score each criterion from 1 to 5):
+
+accuracy: Are the facts, definitions, calculations, and framework usage correct?
+  5 = no errors; 4 = minor imprecision that does not change conclusions; 3 = at least one meaningful error or unsupported claim; 2 = several errors; 1 = fundamentally wrong or misleading.
+
+completeness: Does it address every part of the question at the depth the question needs?
+  5 = fully addresses all parts; 4 = small omission; 3 = misses a notable part or stays superficial where depth was needed; 2 = addresses only part of the question; 1 = largely misses the question.
+
+structure: Is it logically organized and easy for a busy executive to follow?
+  5 = clear, well-ordered, appropriately formatted; 4 = mostly clear; 3 = understandable but disorganized in places; 2 = hard to follow; 1 = incoherent.
+
+actionability: Does it give the asker something they can use (clear recommendations, next steps, explicit assumptions, or a usable explanation for a definitional question)?
+  5 = immediately usable; 4 = usable with minor gaps; 3 = generic or vague; 2 = little practical value; 1 = none.
+
+grounding: Are the memo's factual claims supported by the cited sources, and are its citations [n] real and relevant?
+  5 = every material claim is supported by a real, relevant citation; 4 = a minor unsupported claim or one weak citation; 3 = at least one important unsupported claim or irrelevant citation; 2 = several material claims unsupported or citations largely decorative; 1 = claims contradict the sources, or citations are missing or fabricated.
+
+Client question:
+<question>
+$query
+</question>
+
+Memo and numbered sources to grade:
+<answer>
+$answer
+</answer>
+
+Return only JSON in this exact shape, with no other text:
+{"accuracy": 1-5, "completeness": 1-5, "structure": 1-5, "actionability": 1-5, "grounding": 1-5, "rationale": "two or three sentences explaining the main strengths and weaknesses"}

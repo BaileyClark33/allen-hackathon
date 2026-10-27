@@ -14,10 +14,12 @@ def _ci(lo: float, hi: float, scale: float = 1.0, fmt: str = ".2f") -> str:
     return f"[{lo * scale:{fmt}}, {hi * scale:{fmt}}]"
 
 
-def summary_table(summaries: list[StrategySummary], baseline: str = "all-ultra") -> str:
+def summary_table(
+    summaries: list[StrategySummary], baseline: str = "all-ultra", unit: str = "query"
+) -> str:
     base = next((s for s in summaries if s.strategy == baseline), None)
     header = (
-        "| Strategy | n | Cost / query (USD) | 95% CI | Cost as % of all-Ultra | p50 latency (s) | p95 latency (s) "
+        f"| Strategy | n | Cost / {unit} (USD) | 95% CI | Cost as % of all-Ultra | p50 latency (s) | p95 latency (s) "
         "| Mean score | 95% CI | Pass rate | 95% CI | Tier mix |"
     )
     lines = [header, "|" + "---|" * 12]

@@ -3,20 +3,32 @@ from __future__ import annotations
 from nemoroute.cli import base_parser, setup
 from nemoroute.config import require_locked
 from nemoroute.datasets import dataset_paths, human_files
-from nemoroute.human_agreement import answer_candidates, stratified_sample, write_human_files
+from nemoroute.human_agreement import answer_candidates, memo_candidates, stratified_sample, write_human_files
 from nemoroute.jsonl import read_jsonl
 from nemoroute.labeling.label import passes
+
+MEMO_SAMPLE_SIZE = 30
 
 
 def main() -> None:
     parser = base_parser("Export a blind sample of (query, answer) pairs for human pass/fail labeling.")
-    parser.add_argument("--target", required=True, choices=["calibration", "test"])
+    parser.add_argument("--target", required=True, choices=["calibration", "test", "memo"])
     parser.add_argument("--force", action="store_true", help="overwrite an existing CSV")
     args = parser.parse_args()
     cfg, _ = setup(args)
     csv_path, key_path = human_files(cfg, args.target)
 
-    if args.target == "calibration":
+    if args.target == "memo":
+        memo_dir = cfg.path("data/memo_bench")
+        candidates = memo_candidates(
+            read_jsonl(memo_dir / "memos.jsonl"), read_jsonl(memo_dir / "memo_judgments.jsonl")
+        )
+        if not candidates:
+            raise SystemExit(f"No judged memos found in {memo_dir}. Run scripts/evaluate_memos.py first.")
+        sample = stratified_sample(
+            candidates, lambda c: c["strategy"], MEMO_SAMPLE_SIZE, cfg.human_agreement.seed
+        )
+    elif args.target == "calibration":
         cal = dataset_paths(cfg, "calibration")
         candidates = answer_candidates(read_jsonl(cal.queries), read_jsonl(cal.responses), read_jsonl(cal.judgments))
         total = cfg.tuning.human_per_tier * len(cfg.tiers())

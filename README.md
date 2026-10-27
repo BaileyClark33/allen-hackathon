@@ -14,12 +14,41 @@ Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
 ## Results
 
-_Pending: populated from `results/results.md` after the held-out test evaluation._
+**Memo benchmark (routed vs all-Ultra vs all-Nano): pending B2.** The routing and public-benchmark results below are final.
 
-Headline metrics: routing accuracy, under-routing rate, cost per query, latency, and answer quality, compared with an all-Ultra baseline, an all-Nano baseline, the zero-shot Nano router, an optional closed frontier reference model, and an oracle router (upper bound). Reported on two benchmarks:
+### Held-out consulting test set
 
-- the frozen held-out split of our consulting dataset (LLM-judged, with a second judge as a bias check)
-- a seeded MMLU-Pro business/economics sample (exact-match scored, no judge)
+The test split is frozen (seed 42, 20.2% of 600 labeled queries; 27 of 121 unresolved). Routing metrics use the 94 resolved queries. The router picks a tier with Nano; every strategy reuses the same cached answers and Ultra judge scores.
+
+- Routing accuracy: **59.6%** (95% CI 50.0–70.2%); under-routing **9.6%**, over-routing **30.9%**.
+- Unresolved rate: **22.3%** (27/121) — no tier passed the locked rubric.
+
+| Strategy | Cost/query | % of all-Ultra | Pass rate | Mean score |
+|---|---|---|---|---|
+| all-Nano | $0.00058 | 9% | 44.7% [35.1–54.3] | 4.39 [4.21–4.55] |
+| all-Ultra | $0.00666 | 100% | 77.7% [69.1–86.2] | 4.87 [4.79–4.94] |
+| **router (zero-shot Nano)** | **$0.00386** | **58%** | **79.8% [71.3–87.2]** | **4.84 [4.75–4.91]** |
+| oracle (cheapest passing tier) | $0.00246 | 37% | 100% | 4.99 [4.99–5.00] |
+
+Resolved items only (n=94); 95% bootstrap CIs. On all 121 items, including unresolved, the router pass rate is 62.0% [53.7–70.2] vs all-Ultra 60.3% [52.1–68.6], at 66% of all-Ultra cost.
+
+![Cost vs quality on the held-out test set](results/charts/cost_vs_quality.png)
+
+### MMLU-Pro public benchmark
+
+300 frozen business/economics questions, scored by exact match; no judge. One of 900 tier answers had no extractable letter and is counted wrong.
+
+| Strategy | Accuracy | Cost/query | % of all-Ultra |
+|---|---|---|---|
+| all-Nano | 66.7% [61.0–72.0] | $0.00003 | 3% |
+| all-Super | 88.7% [85.0–92.0] | $0.00091 | 90% |
+| all-Ultra | 88.7% [85.0–92.0] | $0.00101 | 100% |
+| **router (zero-shot Nano)** | **68.0% [62.7–73.0]** | **$0.00015** | **15%** |
+| oracle (cheapest correct tier) | 92.0% [88.7–95.0] | $0.00050 | 49% |
+
+The router saves 85% against all-Ultra but gives up 20.7 points of accuracy; it is 24 points below the oracle. On this benchmark it routes 289/300 questions to Nano.
+
+![Cost vs accuracy on MMLU-Pro](results/public_bench/charts/cost_vs_accuracy_zero_shot_nano.png)
 
 ## How Nemotron and Token Factory are used
 
