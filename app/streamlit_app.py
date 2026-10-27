@@ -303,9 +303,9 @@ def render_sidebar(cfg: Config, app_log: UsageLog) -> None:
 
 def main() -> None:
     st.set_page_config(
-        page_title="NemoRoute · Memo Agent",
+        page_title="NemoRoute · Research Memo Agent",
         page_icon="📋",
-        layout="centered",
+        layout="wide",
     )
     st.markdown(CSS, unsafe_allow_html=True)
     init_state()
@@ -318,11 +318,12 @@ def main() -> None:
         st.stop()
 
     # --- Header ---
-    st.title("NemoRoute Memo Agent")
-    st.write(
-        "Enter a research question and get a sourced consulting memo. "
-        "NemoRoute routes each step to the cheapest capable Nemotron model, "
-        "then compiles findings into a polished markdown memo."
+    st.title("Nemotron Research Memo Agent")
+    st.markdown(
+        "Ask any business research question and get a sourced consulting memo in seconds. "
+        "NemoRoute intelligently routes each step of the pipeline — planning, extraction, and synthesis — "
+        "to the cheapest capable Nemotron model, then compiles findings into a polished, "
+        "citation-backed markdown memo."
     )
 
     # --- Example buttons ---
@@ -346,6 +347,14 @@ def main() -> None:
 
     # --- Sidebar ---
     render_sidebar(cfg, app_log)
+
+    # --- Footer ---
+    st.divider()
+    st.caption(
+        "Powered by [Nemotron 3](https://build.nvidia.com/models) (Nano · Super · Ultra) via "
+        "[Nebius Token Factory](https://nebius.com) · Web search by [Tavily](https://tavily.com) · "
+        "Built for the Nebius + NVIDIA Allen Hackathon 2026"
+    )
 
 
 def run_memo_flow(
