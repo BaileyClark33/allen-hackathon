@@ -13,7 +13,7 @@ from nemoroute.cli import base_parser, make_client, print_run_summary, setup
 from nemoroute.client import ChatClient
 from nemoroute.concurrency import run_tasks
 from nemoroute.config import Config, active_thresholds, memo_thresholds
-from nemoroute.evaluation.charts import cost_quality_chart
+from nemoroute.evaluation.charts import cost_quality_chart, tier_mix_chart
 from nemoroute.evaluation.report import summary_table
 from nemoroute.evaluation.system import ItemOutcome, StrategySummary, summarize
 from nemoroute.jsonl import append_jsonl, index_by, read_jsonl
@@ -273,6 +273,43 @@ def build_summaries(
     return summaries
 
 
+def paired_tier_table(memos: list[dict], judgments: list[dict]) -> str:
+    """routed vs all_ultra on the same questions, split by the routed synthesis tier. On tier-3 rows both
+    synthesize with Ultra, so a gap there comes from the earlier steps (routed extracts with Nano)."""
+    memo_idx = index_by(memos, "query_id", "strategy")
+    judgment_idx = index_by(judgments, "query_id", "strategy")
+
+    def mean_of(values: list[float]) -> float:
+        return sum(values) / len(values)
+
+    lines = [
+        "| Routed tier | n | Mean: routed | Mean: all_ultra | routed better / tie / worse "
+        "| Accuracy: routed | Accuracy: all_ultra | Grounding: routed | Grounding: all_ultra |",
+        "|---|---|---|---|---|---|---|---|---|",
+    ]
+    tiers = sorted({m.get("route_tier") for (q, s), m in memo_idx.items() if s == "routed"} - {None})
+    for tier in tiers:
+        qids = [
+            q for (q, s), m in memo_idx.items()
+            if s == "routed" and m.get("route_tier") == tier
+            and (q, "routed") in judgment_idx and (q, "all_ultra") in judgment_idx
+        ]
+        if not qids:
+            continue
+        r = [judgment_idx[(q, "routed")]["scores"] for q in qids]
+        u = [judgment_idx[(q, "all_ultra")]["scores"] for q in qids]
+        rm = [mean_of([x[c] for c in MEMO_CRITERIA]) for x in r]
+        um = [mean_of([x[c] for c in MEMO_CRITERIA]) for x in u]
+        better = sum(a > b for a, b in zip(rm, um))
+        tie = sum(a == b for a, b in zip(rm, um))
+        lines.append(
+            f"| T{tier} | {len(qids)} | {mean_of(rm):.2f} | {mean_of(um):.2f} | {better} / {tie} / {len(qids) - better - tie} "
+            f"| {mean_of([x['accuracy'] for x in r]):.2f} | {mean_of([x['accuracy'] for x in u]):.2f} "
+            f"| {mean_of([x['grounding'] for x in r]):.2f} | {mean_of([x['grounding'] for x in u]):.2f} |"
+        )
+    return "\n".join(lines)
+
+
 def locked_pass_table(locked_summaries: list[StrategySummary]) -> str:
     lines = ["| Strategy | n | Pass rate | 95% CI |", "|---|---|---|---|"]
     for s in locked_summaries:
@@ -289,6 +326,8 @@ def render_report(
     locked_rule: tuple[float, int],
     title: str,
     missing: list[str],
+    incomplete: list[str] | None = None,
+    paired: str | None = None,
 ) -> str:
     locked = cfg.labeling.locked
     memo_line = (
@@ -316,6 +355,11 @@ def render_report(
         f"Frozen prompts: {len(prompts)} in data/memo_bench/prompts.jsonl. "
         f"Complete memo/judgment pairs: {n_complete} of {len(prompts) * len(STRATEGIES)}.",
         *([f"No complete memo/judgment pairs for: {', '.join(missing)}."] if missing else []),
+        *(
+            [f"Excluded (no memo or no judgment after the resume pass, see logs): {', '.join(incomplete)}."]
+            if incomplete
+            else []
+        ),
         "",
         "Method:",
         "- Prompts are frozen before any memo runs; every prompt is run under all three strategies.",
@@ -340,7 +384,21 @@ def render_report(
         "",
         locked_pass_table(locked_summaries),
         "",
+        *(
+            [
+                "Paired view: routed vs all_ultra on the same questions, by the tier the router picked. On T3 rows "
+                "both strategies synthesize with Ultra, so a gap there points to the extract step (Nano for routed, "
+                "Ultra for all_ultra), plus sampling noise.",
+                "",
+                paired,
+                "",
+            ]
+            if paired
+            else []
+        ),
         "![Cost vs quality](charts/cost_vs_quality_memos.png)",
+        "",
+        "![Routed tier mix](charts/tier_mix_memos.png)",
         "",
     ]
     return "\n".join(lines)
@@ -349,6 +407,9 @@ def render_report(
 def main() -> None:
     parser = base_parser("Memo benchmark: routed vs all-Ultra vs all-Nano, judged blind with Ultra.")
     add_budget_args(parser)
+    parser.add_argument(
+        "--report-only", action="store_true", help="re-render the report and charts from existing outputs; no API calls"
+    )
     args = parser.parse_args()
     cfg, usage_log = setup(args)
     limit = resolve_limit(args, cfg.budget.dry_run_limit)
@@ -376,6 +437,9 @@ def main() -> None:
         f"Memo benchmark: {len(prompts)} prompts x {len(STRATEGIES)} strategies; pending evidence "
         f"{len(todo_evidence)}, pending memos {len(todo_memos)}, pending judgments {len(planned_judgments)}."
     )
+    if args.report_only:
+        print("--report-only: skipping all pending work; re-rendering from existing outputs.")
+        todo_memos, todo_evidence, planned_judgments = [], [], []
 
     calls: dict[str, int] = {}
     if todo_evidence:
@@ -458,6 +522,8 @@ def main() -> None:
         raise SystemExit("No complete memo/judgment pairs yet; nothing to report.")
     locked_summaries = [s for s in build_summaries(cfg, prompts, memos, judgments, *locked_rule) if s.n]
     missing = [s.strategy for s in all_summaries if not s.n]
+    complete = set(index_by(memos, "query_id", "strategy")) & set(index_by(judgments, "query_id", "strategy"))
+    incomplete = [f"{p['id']}/{st}" for p in prompts for st in STRATEGIES if (p["id"], st) not in complete]
 
     title = "Memo benchmark: routed vs all-Ultra vs all-Nano"
     if limit is not None:
@@ -466,7 +532,16 @@ def main() -> None:
     charts_dir = results_dir / "charts"
     charts_dir.mkdir(parents=True, exist_ok=True)
     cost_quality_chart(summaries, charts_dir / "cost_vs_quality_memos.png", unit="memo")
-    md = render_report(cfg, prompts, summaries, locked_summaries, memo_rule, locked_rule, title, missing)
+    routed = next((s for s in summaries if s.strategy == "routed"), None)
+    if routed is not None:
+        tier_mix_chart(
+            routed.tier_mix, cfg.tiers(), charts_dir / "tier_mix_memos.png",
+            f"Routed memos: synthesis tier picked by the Nano router (n={routed.n})",
+        )
+    md = render_report(
+        cfg, prompts, summaries, locked_summaries, memo_rule, locked_rule, title, missing, incomplete,
+        paired_tier_table(memos, judgments),
+    )
     (results_dir / "memo_results.md").write_text(md)
     locked_pass = {s.strategy: s for s in locked_summaries}
     rows = []
