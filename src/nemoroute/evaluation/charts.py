@@ -66,6 +66,27 @@ def cost_quality_chart(
     plt.close(fig)
 
 
+def tier_mix_chart(tier_mix: dict[int | str, int], tiers: list[int], path: Path, title: str) -> None:
+    """One series: how many items the router sent to each tier (count and share labelled on each bar)."""
+    counts = [tier_mix.get(t, 0) for t in tiers]
+    total = sum(counts) or 1
+    fig, ax = plt.subplots(figsize=(6.4, 3.4))
+    _style(ax)
+    x = np.arange(len(tiers))
+    ax.xaxis.grid(False)
+    bars = ax.bar(x, counts, width=0.55, color=SERIES[0])
+    for bar, n in zip(bars, counts):
+        ax.annotate(f"{n} ({n / total:.0%})", (bar.get_x() + bar.get_width() / 2, n), textcoords="offset points",
+                    xytext=(0, 4), ha="center", color=INK, fontsize=9)
+    ax.set_xticks(x, [f"Tier {t}" for t in tiers])
+    ax.set_ylabel("Items routed", color=INK)
+    ax.set_ylim(0, max(counts + [1]) * 1.18)
+    ax.set_title(title, color=INK, fontsize=11, loc="left")
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
 def latency_chart(summaries: list[StrategySummary], path: Path) -> None:
     fig, ax = plt.subplots(figsize=(6.4, 3.8))
     _style(ax)

@@ -209,6 +209,8 @@ def test_evaluate_memos_end_to_end_and_resume(tmp_path, monkeypatch, capsys):
     assert "Pass rate under the locked labeling rule (mean >= 4.0, accuracy >= 5):" in md
     assert "| routed | 2 | 0.0% | [0.0%, 0.0%] |" in md
     assert "Evidence is shared" in md
+    assert "Excluded" not in md
+    assert "| T2 | 2 | 4.20 | 4.20 | 0 / 2 / 0 | 4.00 | 4.00 | 4.00 | 4.00 |" in md
     assert "95% CI" in md
     assert "Cost / memo (USD)" in md
     assert "Mean score" in md and "Pass rate" in md and "Tier mix" in md
@@ -217,6 +219,8 @@ def test_evaluate_memos_end_to_end_and_resume(tmp_path, monkeypatch, capsys):
     assert "30.00" in md
     assert "blind" in md and "cached search" in md and "every model call" in md
     assert (results_dir / "charts" / "cost_vs_quality_memos.png").stat().st_size > 0
+    assert (results_dir / "charts" / "tier_mix_memos.png").stat().st_size > 0
+    assert "charts/tier_mix_memos.png" in md
     assert (results_dir / "memo_results.csv").read_text().count("\n") == 4
 
     run_main(monkeypatch, config_path, client)
@@ -321,3 +325,24 @@ def test_memo_summaries_aggregate_cost_latency_and_pass(tmp_path):
     for summary in summaries:
         assert len(summary.cost_ci) == 2 and summary.cost_ci[0] <= summary.mean_cost_usd <= summary.cost_ci[1]
         assert len(summary.score_ci) == 2 and len(summary.pass_ci) == 2
+
+
+def test_report_only_makes_no_calls_and_lists_excluded_pairs(tmp_path, monkeypatch):
+    config_path, memo_dir = prepare(tmp_path, monkeypatch)
+    calls: list[tuple[str, str]] = []
+    gather_calls: list[str] = []
+    install_memo_stub(monkeypatch, calls, {k: 0.01 for k in evaluate_memos.STRATEGIES}, {k: 1.0 for k in evaluate_memos.STRATEGIES}, gather_calls)
+    client = RecordingClient(lambda role, messages: json.dumps(HIGH))
+    run_main(monkeypatch, config_path, client)
+    memos = [m for m in read_jsonl(memo_dir / "memos.jsonl") if (m["query_id"], m["strategy"]) != ("m1", "all_nano")]
+    write_jsonl(memo_dir / "memos.jsonl", memos)
+    n_calls, n_judge = len(calls), len(client.messages)
+
+    monkeypatch.setattr(
+        sys, "argv", ["evaluate_memos", "--config", str(config_path), "--limit", "2", "--report-only"]
+    )
+    evaluate_memos.main()
+
+    assert (len(calls), len(client.messages)) == (n_calls, n_judge)
+    md = (tmp_path / "results" / "memo_results.md").read_text()
+    assert "Excluded (no memo or no judgment after the resume pass, see logs): m1/all_nano." in md
