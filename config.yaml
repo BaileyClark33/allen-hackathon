@@ -171,6 +171,11 @@ app:
   max_query_chars: 1000
   answer_max_tokens: 900
 
+agent:
+  max_searches: 4
+  results_per_search: 5
+  search_depth: basic
+
 paths:
   calls_log: logs/calls.jsonl
   app_spend_log: logs/app_spend.jsonl

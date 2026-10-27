@@ -124,6 +124,12 @@ class AppConfig(BaseModel):
     answer_max_tokens: int
 
 
+class AgentConfig(BaseModel):
+    max_searches: int
+    results_per_search: int
+    search_depth: Literal["basic", "advanced"]
+
+
 class PathsConfig(BaseModel):
     calls_log: str
     app_spend_log: str
@@ -148,6 +154,7 @@ class Config(BaseModel):
     evaluation: EvaluationConfig
     human_agreement: HumanAgreementConfig
     app: AppConfig
+    agent: AgentConfig
     paths: PathsConfig
 
     def path(self, relative: str) -> Path:
