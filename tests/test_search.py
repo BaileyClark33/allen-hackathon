@@ -61,6 +61,18 @@ def test_cache_hit_avoids_second_api_call(tmp_path):
     assert len(calls) == 1
 
 
+def test_truncated_cache_is_treated_as_a_miss(tmp_path):
+    calls: list[httpx.Request] = []
+    client = make_client(tmp_path, calls)
+    client.search("US EV charger market size")
+    cache_file, = (tmp_path / "cache").glob("*.json")
+    cache_file.write_text('{"query": "x", "sources": [')
+
+    calls.clear()
+    assert len(client.search("US EV charger market size")) == 3
+    assert len(calls) == 1
+
+
 def test_cache_survives_without_api_key_on_second_client(tmp_path, monkeypatch):
     calls: list[httpx.Request] = []
     client = make_client(tmp_path, calls)

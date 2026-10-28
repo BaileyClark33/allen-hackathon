@@ -16,8 +16,12 @@ def read_jsonl(path: Path) -> list[dict[str, Any]]:
     with open(path) as f:
         for line in f:
             line = line.strip()
-            if line:
+            if not line:
+                continue
+            try:
                 records.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue  # a killed process can leave a partial last line
     return records
 
 

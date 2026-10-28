@@ -14,12 +14,13 @@ class GuardDecision:
 
 
 def worst_case_query_cost(cfg: Config) -> float:
-    top_model = cfg.model_for_role(cfg.tier_roles[max(cfg.tiers())])
-    router_model = cfg.model_for_role("router")
+    """Upper bound for one memo: every LLM step at the top tier's max_tokens, sources included."""
+    top_role = cfg.tier_roles[max(cfg.tiers())]
+    top_model = cfg.model_for_role(top_role)
     prompt_tokens = cfg.app.max_query_chars // 2 + 600
-    return call_cost(router_model, prompt_tokens, cfg.roles["router"].max_tokens) + call_cost(
-        top_model, prompt_tokens, cfg.app.answer_max_tokens
-    )
+    source_tokens = cfg.agent.max_searches * cfg.agent.results_per_search * 300
+    llm_steps = 3 * call_cost(top_model, prompt_tokens + source_tokens, cfg.roles[top_role].max_tokens)
+    return call_cost(top_model, prompt_tokens, cfg.roles["router"].max_tokens) + llm_steps
 
 
 def check_query_allowed(

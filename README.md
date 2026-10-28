@@ -114,7 +114,7 @@ Set in `config.yaml` under `app:`:
 - `session_query_cap`: queries allowed per browser session
 - `daily_spend_cap_usd`: global spend cap per UTC day
 - `total_spend_cap_usd`: lifetime cap
-- `max_query_chars` and `answer_max_tokens`: bound the cost of a single query
+- `max_query_chars`: bound the question length; each LLM step is bounded by its role's `max_tokens`
 
 App spend is logged to `logs/app_spend.jsonl`. The log is shared by every session in a single Streamlit process.
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import html
 import os
 
 import streamlit as st
@@ -246,11 +247,12 @@ def display_memo_result(result: MemoResult, cfg: Config) -> None:
     if result.sources:
         st.subheader("Sources")
         for i, src in enumerate(result.sources, 1):
+            url = html.escape(src.url) if src.url.startswith(("http://", "https://")) else "#"
             st.markdown(
                 f'<div class="source-item">'
                 f'<strong>[{i}]</strong> '
-                f'<a href="{src.url}" target="_blank">{src.title}</a>'
-                f' — {src.snippet[:200]}</div>',
+                f'<a href="{url}" target="_blank" rel="noopener noreferrer">{html.escape(src.title)}</a>'
+                f' — {html.escape(src.snippet[:200])}</div>',
                 unsafe_allow_html=True,
             )
 
@@ -345,6 +347,10 @@ def main() -> None:
     if st.button("Research & Write Memo", type="primary"):
         run_memo_flow(cfg, app_log, client, search, query)
 
+    # Keep the last memo on screen across reruns (typing the next question, opening the sidebar).
+    if st.session_state.last_result is not None:
+        display_memo_result(st.session_state.last_result, cfg)
+
     # --- Sidebar ---
     render_sidebar(cfg, app_log)
 
@@ -399,10 +405,6 @@ def run_memo_flow(
     s.memo_count += 1
     s.total_cost += result.total_cost_usd
     s.last_result = result
-    s.last_query = result.question
-
-    # --- Display ---
-    display_memo_result(result, cfg)
 
 
 if __name__ == "__main__":

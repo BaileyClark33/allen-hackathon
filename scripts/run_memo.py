@@ -4,6 +4,7 @@ import argparse
 import sys
 
 from nemoroute.agent.memo import run_memo
+from nemoroute.budget import RunBudget
 from nemoroute.client import TokenFactoryClient
 from nemoroute.config import load_config
 from nemoroute.search import TavilySearchClient
@@ -28,8 +29,8 @@ def main() -> None:
     args = parser.parse_args()
 
     cfg = load_config()
-    usage_log = UsageLog(cfg)
-    client = TokenFactoryClient(cfg, usage_log)
+    usage_log = UsageLog(cfg.path(cfg.paths.calls_log))
+    client = TokenFactoryClient(cfg, usage_log, RunBudget(args.limit))
     search = TavilySearchClient(cfg)
 
     result = run_memo(

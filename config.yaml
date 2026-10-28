@@ -176,7 +176,6 @@ app:
   daily_spend_cap_usd: 2.0
   total_spend_cap_usd: 15.0
   max_query_chars: 1000
-  answer_max_tokens: 900
 
 agent:
   max_searches: 4
