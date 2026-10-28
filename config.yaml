@@ -160,6 +160,13 @@ evaluation:
   seed: 123
   concurrency: 4
 
+# Memo benchmark pass rule (disclosed in results/memo_results.md). The locked labeling rule's
+# accuracy >= 5 is near-unreachable for multi-claim memos, so memos use the pre-calibration
+# default (4.0, 4); the locked-rule pass rate is reported alongside it.
+memo_bench:
+  pass_threshold: 4.0
+  min_accuracy: 4
+
 human_agreement:
   sample_size: 50
   seed: 99

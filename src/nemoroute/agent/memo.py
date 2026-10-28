@@ -60,6 +60,17 @@ class StepTrace:
 
 
 @dataclass
+class Evidence:
+    """Plan + search output for one question. Passing the same Evidence to every strategy makes
+    them see identical sources, which the memo benchmark needs for a fair comparison."""
+
+    queries: list[str]
+    sources: list[Source]
+    plan_step: StepTrace
+    search_step: StepTrace
+
+
+@dataclass
 class MemoResult:
     question: str
     strategy: str
@@ -151,6 +162,36 @@ def _parse_facts(content: str) -> list[dict]:
     ]
 
 
+def gather_evidence(
+    question: str,
+    cfg: Config,
+    client: ChatClient,
+    search: SearchClient,
+    role: str = "tier1",
+) -> Evidence:
+    """Plan search queries with `role`, run them, and dedupe sources by URL."""
+    plan_prompt = load_prompt(cfg, "plan").substitute(max_searches=str(cfg.agent.max_searches))
+    plan_messages = [
+        {"role": "system", "content": plan_prompt},
+        {"role": "user", "content": question},
+    ]
+    plan_result = client.chat(role, plan_messages, step="plan", json_schema=PLAN_SCHEMA)
+    queries = _parse_queries(plan_result.content)
+    plan_step = _step_from_chat(plan_result, "plan", int(role.replace("tier", "")))
+
+    search_start = time.perf_counter()
+    all_sources: list[Source] = []
+    seen_urls: set[str] = set()
+    for query in queries:
+        sources = search.search(query)
+        for src in sources:
+            if src.url not in seen_urls:
+                seen_urls.add(src.url)
+                all_sources.append(src)
+    search_step = _search_step_from_latency(time.perf_counter() - search_start)
+    return Evidence(queries=queries, sources=all_sources, plan_step=plan_step, search_step=search_step)
+
+
 def run_memo(
     question: str,
     strategy: str,
@@ -158,7 +199,11 @@ def run_memo(
     client: ChatClient,
     search: SearchClient,
     router: Router | None = None,
+    *,
+    evidence: Evidence | None = None,
 ) -> MemoResult:
+    """Run the memo pipeline. With `evidence`, the plan and search steps are reused instead of
+    re-run, and their recorded traces (and cost) are included in this memo's steps."""
     if strategy not in VALID_STRATEGIES:
         raise ValueError(
             f"Invalid strategy '{strategy}'. Must be one of: {', '.join(sorted(VALID_STRATEGIES))}"
@@ -187,29 +232,12 @@ def run_memo(
             )
         )
 
-    # --- Step 2: Plan ---
-    plan_role = _step_role(strategy, route_tier, "plan")
-    plan_prompt = load_prompt(cfg, "plan").substitute(max_searches=str(cfg.agent.max_searches))
-    plan_messages = [
-        {"role": "system", "content": plan_prompt},
-        {"role": "user", "content": question},
-    ]
-    plan_result = client.chat(plan_role, plan_messages, step="plan", json_schema=PLAN_SCHEMA)
-    queries = _parse_queries(plan_result.content)
-    steps.append(_step_from_chat(plan_result, "plan", _step_tier(strategy, route_tier, "plan")))
-
-    # --- Step 3: Search ---
-    search_start = time.perf_counter()
-    all_sources: list[Source] = []
-    seen_urls: set[str] = set()
-    for query in queries:
-        sources = search.search(query)
-        for src in sources:
-            if src.url not in seen_urls:
-                seen_urls.add(src.url)
-                all_sources.append(src)
-    search_latency = time.perf_counter() - search_start
-    steps.append(_search_step_from_latency(search_latency))
+    # --- Steps 2–3: Plan + Search (reused when evidence is supplied) ---
+    if evidence is None:
+        evidence = gather_evidence(question, cfg, client, search, role=_step_role(strategy, route_tier, "plan"))
+    all_sources = list(evidence.sources)
+    steps.append(evidence.plan_step)
+    steps.append(evidence.search_step)
 
     # --- Step 4: Extract ---
     extract_role = _step_role(strategy, route_tier, "extract")
