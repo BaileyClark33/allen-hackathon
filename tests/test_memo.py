@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from nemoroute.agent.memo import MemoResult, StepTrace, run_memo, gather_evidence, VALID_STRATEGIES
+from nemoroute.agent.memo import MemoResult, StepTrace, run_memo, gather_evidence, VALID_STRATEGIES, _format_facts
 from nemoroute.config import Config
 from nemoroute.routers.base import RoutingDecision, Router
 from nemoroute.search import Source
@@ -417,3 +417,21 @@ class TestSharedEvidence:
 
         assert len({tuple(u) for u in urls.values()}) == 1
         assert urls["routed"] == [s.url for s in evidence.sources]
+
+
+def test_plan_queries_are_capped_at_max_searches(tmp_path: Path):
+    cfg = make_config(tmp_path)
+    client = _make_client({"plan": json.dumps({"queries": [f"query {i}" for i in range(10)]})})
+    search = StepTrackingSearch()
+
+    evidence = gather_evidence("test", cfg, client, search)
+
+    assert len(evidence.queries) == cfg.agent.max_searches
+    assert search.calls == [f"query {i}" for i in range(cfg.agent.max_searches)]
+
+
+def test_facts_pointing_past_the_sources_are_dropped():
+    facts = [{"source_index": 1, "fact": "kept"}, {"source_index": 9, "fact": "dropped"}]
+    sources = [Source(url="https://example.com/1", title="t", snippet="s")]
+
+    assert _format_facts(facts, sources) == "[1] kept"

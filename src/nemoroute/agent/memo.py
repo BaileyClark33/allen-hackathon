@@ -136,10 +136,12 @@ def _format_sources(sources: list[Source]) -> str:
 
 
 def _format_facts(facts: list[dict], sources: list[Source]) -> str:
-    lines: list[str] = []
-    for fact in facts:
-        idx = fact["source_index"]
-        lines.append(f"[{idx}] {fact['fact']}")
+    # Keep only facts that point at a real source so the memo has no dangling citations.
+    lines = [
+        f"[{fact['source_index']}] {fact['fact']}"
+        for fact in facts
+        if 1 <= fact["source_index"] <= len(sources)
+    ]
     return "\n".join(lines)
 
 
@@ -176,7 +178,7 @@ def gather_evidence(
         {"role": "user", "content": question},
     ]
     plan_result = client.chat(role, plan_messages, step="plan", json_schema=PLAN_SCHEMA)
-    queries = _parse_queries(plan_result.content)
+    queries = _parse_queries(plan_result.content)[: cfg.agent.max_searches]
     plan_step = _step_from_chat(plan_result, "plan", int(role.replace("tier", "")))
 
     search_start = time.perf_counter()

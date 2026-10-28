@@ -128,7 +128,6 @@ class AppConfig(BaseModel):
     daily_spend_cap_usd: float
     total_spend_cap_usd: float
     max_query_chars: int
-    answer_max_tokens: int
 
 
 class AgentConfig(BaseModel):
