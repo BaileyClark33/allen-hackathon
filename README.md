@@ -223,6 +223,10 @@ The app is live at **[INSERT YOUR STREAMLIT CLOUD URL HERE]**.
 - Secrets: `NEBIUS_API_KEY` (low-limit Token Factory key) and `TAVILY_API_KEY` (Tavily search key)
 - Writable paths fall back to `/tmp` when the repo directory is read-only
 
+## Credits
+
+Built with Nebius Token Factory inference, NVIDIA Nemotron models and Tavily web search.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
