@@ -33,7 +33,7 @@ Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
 **Where routed loses quality.** The router sent 25 memos to Ultra, 15 to Super and none to Nano. On the 25 Ultra-routed questions, both strategies write the memo with Ultra, yet routed scores 4.06 vs 4.33. Routed is worse on 16 of those questions and better on 6. The gap is mostly accuracy (3.04 vs 3.60) and grounding (2.68 vs 3.24), the two criteria that depend on the extracted facts. Running extract on a larger model is the obvious next experiment.
 
-Human agreement with the judge on 30 blind memos: *pending (labels in progress)*.
+Human agreement with the judge on 30 blind memos (10 per strategy): **70% (Cohen's κ = 0.33)**. The judge was more lenient: it passed 9 memos the human rejected, 6 of them all-Ultra, and missed none the human passed.
 
 ![Cost vs quality per memo](results/charts/cost_vs_quality_memos.png)
 
@@ -196,7 +196,7 @@ What each command does:
 - **Self-grading.** Ultra grades answers it also produced. The mitigations:
   - blind judging
   - absolute rubric scores rather than pairwise comparison
-  - a human-agreement check on the test set
+  - a human-agreement check on 30 blind memos
 - **Labels depend on the judge.** They reflect this judge, rubric and threshold, not ground truth.
 - **Memo benchmark caveats:**
   - **Small sample.** n = 40 questions per strategy, so the CIs are wide.
