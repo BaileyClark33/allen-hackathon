@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from collections import Counter
 from dataclasses import asdict, is_dataclass
 from pathlib import Path
@@ -16,6 +17,7 @@ from nemoroute.config import Config, active_thresholds, memo_thresholds
 from nemoroute.evaluation.charts import cost_quality_chart, tier_mix_chart
 from nemoroute.evaluation.report import summary_table
 from nemoroute.evaluation.system import ItemOutcome, StrategySummary, summarize
+from nemoroute.human_agreement import render_agreement_section, write_agreement_section
 from nemoroute.jsonl import append_jsonl, index_by, read_jsonl
 from nemoroute.labeling.judge import judge_answer
 from nemoroute.labeling.label import passes
@@ -543,6 +545,10 @@ def main() -> None:
         paired_tier_table(memos, judgments),
     )
     (results_dir / "memo_results.md").write_text(md)
+    agreement_json = results_dir / "human_agreement_memo.json"
+    if agreement_json.exists():
+        report = results_dir / "memo_results.md"
+        write_agreement_section(report, render_agreement_section(json.loads(agreement_json.read_text())))
     locked_pass = {s.strategy: s for s in locked_summaries}
     rows = []
     for summary in summaries:
