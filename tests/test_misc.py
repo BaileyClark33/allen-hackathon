@@ -9,6 +9,7 @@ from fakes import FakeClient
 from nemoroute.dataset.dedup import dedup
 from nemoroute.dataset.generate import cap_by_limit, last_id_number, needed_per_tier
 from nemoroute.human_agreement import agreement, stratified_sample
+from nemoroute.jsonl import read_jsonl
 from nemoroute.labeling.pipeline import select_queries
 from nemoroute.parsing import JsonParseError, extract_json, split_reasoning
 from nemoroute.routers.zero_shot import ZeroShotRouter
@@ -69,6 +70,12 @@ def test_stratified_sample_covers_strata():
     assert len(sample) == 9
     assert sorted(c["tier"] for c in sample) == [1, 1, 1, 2, 2, 2, 3, 3, 3]
     assert sample == stratified_sample(candidates, lambda c: c["tier"], 9, seed=1)
+
+
+def test_read_jsonl_skips_a_partial_last_line(tmp_path):
+    path = tmp_path / "rows.jsonl"
+    path.write_text('{"a": 1}\n{"a": 2}\n{"a": ')
+    assert read_jsonl(path) == [{"a": 1}, {"a": 2}]
 
 
 def test_agreement_stats():

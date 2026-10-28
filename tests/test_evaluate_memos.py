@@ -337,6 +337,10 @@ def test_report_only_makes_no_calls_and_lists_excluded_pairs(tmp_path, monkeypat
     memos = [m for m in read_jsonl(memo_dir / "memos.jsonl") if (m["query_id"], m["strategy"]) != ("m1", "all_nano")]
     write_jsonl(memo_dir / "memos.jsonl", memos)
     n_calls, n_judge = len(calls), len(client.messages)
+    (tmp_path / "results" / "human_agreement_memo.json").write_text(json.dumps({
+        "n": 30, "percent_agreement": 0.7, "cohen_kappa": 0.33, "both_pass": 4, "both_fail": 17,
+        "human_pass_judge_fail": 0, "human_fail_judge_pass": 9, "pass_threshold": 4.0, "min_accuracy": 4,
+    }))
 
     monkeypatch.setattr(
         sys, "argv", ["evaluate_memos", "--config", str(config_path), "--limit", "2", "--report-only"]
@@ -346,3 +350,4 @@ def test_report_only_makes_no_calls_and_lists_excluded_pairs(tmp_path, monkeypat
     assert (len(calls), len(client.messages)) == (n_calls, n_judge)
     md = (tmp_path / "results" / "memo_results.md").read_text()
     assert "Excluded (no memo or no judgment after the resume pass, see logs): m1/all_nano." in md
+    assert "## Human agreement" in md and "70.0%" in md

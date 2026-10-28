@@ -138,7 +138,7 @@ else:
     st.caption("Public benchmark chart not found.")
 
 # ---------------------------------------------------------------------------
-# Memo benchmark (partner's results — may not exist yet)
+# Memo benchmark
 # ---------------------------------------------------------------------------
 
 st.divider()
@@ -146,10 +146,7 @@ st.divider()
 memo_results = RESULTS_DIR / "memo_results.md"
 if memo_results.exists():
     st.header("Memo Benchmark")
-    with st.container():
-        st.markdown(
-            f'<div class="evidence-card">{memo_results.read_text()}</div>',
-            unsafe_allow_html=True,
-        )
+    with st.container(border=True):
+        st.markdown(memo_results.read_text())
 else:
     st.info("Memo benchmark results coming soon.")

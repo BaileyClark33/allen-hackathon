@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -123,13 +124,19 @@ class TavilySearchClient:
         path = self._cache_path(normalized)
         if not path.exists():
             return None
-        payload = json.loads(path.read_text())
-        return [Source(**entry) for entry in payload["sources"]]
+        try:
+            payload = json.loads(path.read_text())
+            return [Source(**entry) for entry in payload["sources"]]
+        except (OSError, ValueError, KeyError, TypeError):
+            return None  # a crash mid-write can leave a truncated cache file
 
     def _write_cache(self, normalized: str, sources: list[Source]) -> None:
         try:
             self.cache_dir.mkdir(parents=True, exist_ok=True)
             payload = {"query": normalized, "sources": [asdict(source) for source in sources]}
-            self._cache_path(normalized).write_text(json.dumps(payload, indent=2))
+            target = self._cache_path(normalized)
+            tmp = target.with_suffix(".tmp")
+            tmp.write_text(json.dumps(payload, indent=2))
+            os.replace(tmp, target)
         except (PermissionError, OSError):
             pass  # read-only filesystem (e.g. Streamlit Cloud) — cache is optional
