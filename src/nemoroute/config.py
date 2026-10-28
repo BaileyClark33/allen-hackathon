@@ -111,6 +111,13 @@ class EvaluationConfig(BaseModel):
     concurrency: int
 
 
+class MemoBenchConfig(BaseModel):
+    """Memo-benchmark pass rule. Separate from labeling.locked, which stays the routing-label rule."""
+
+    pass_threshold: float = 4.0
+    min_accuracy: int = 4
+
+
 class HumanAgreementConfig(BaseModel):
     sample_size: int
     seed: int
@@ -152,6 +159,7 @@ class Config(BaseModel):
     split: SplitConfig
     router: RouterConfig
     evaluation: EvaluationConfig
+    memo_bench: MemoBenchConfig = MemoBenchConfig()
     human_agreement: HumanAgreementConfig
     app: AppConfig
     agent: AgentConfig
@@ -199,6 +207,10 @@ def active_thresholds(cfg: Config) -> tuple[float, int]:
     if cfg.labeling.locked is not None:
         return cfg.labeling.locked.pass_threshold, cfg.labeling.locked.min_accuracy
     return cfg.labeling.pass_threshold, cfg.labeling.min_accuracy
+
+
+def memo_thresholds(cfg: Config) -> tuple[float, int]:
+    return cfg.memo_bench.pass_threshold, cfg.memo_bench.min_accuracy
 
 
 LOCKED_LINE = re.compile(r"^(  locked:).*$", re.MULTILINE)
