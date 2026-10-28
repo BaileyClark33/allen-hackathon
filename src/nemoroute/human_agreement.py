@@ -130,13 +130,25 @@ def agreement(
     min_accuracy: int,
 ) -> dict[str, Any]:
     judged = index_by(judgments, "query_id", "tier")
-    h, j = [], []
-    for row in human:
-        h.append(row["human_pass"])
-        j.append(passes(judged[(row["query_id"], row["tier"])]["scores"], pass_threshold, min_accuracy))
+    rows = [
+        (row["tier"], row["human_pass"],
+         passes(judged[(row["query_id"], row["tier"])]["scores"], pass_threshold, min_accuracy))
+        for row in human
+    ]
+    h = [r[1] for r in rows]
+    j = [r[2] for r in rows]
     n = len(h)
     agree = sum(a == b for a, b in zip(h, j))
     kappa = float(cohen_kappa_score(h, j)) if n and len(set(h) | set(j)) > 1 else float("nan")
+    by_tier = {}
+    for tier in sorted({r[0] for r in rows}, key=str):
+        sub = [r for r in rows if r[0] == tier]
+        by_tier[tier] = {
+            "n": len(sub),
+            "human_pass": sum(r[1] for r in sub),
+            "judge_pass": sum(r[2] for r in sub),
+            "agreement": sum(r[1] == r[2] for r in sub) / len(sub),
+        }
     return {
         "n": n,
         "percent_agreement": agree / n if n else float("nan"),
@@ -145,13 +157,14 @@ def agreement(
         "both_fail": sum((not a) and (not b) for a, b in zip(h, j)),
         "human_pass_judge_fail": sum(a and not b for a, b in zip(h, j)),
         "human_fail_judge_pass": sum((not a) and b for a, b in zip(h, j)),
+        "by_tier": by_tier,
     }
 
 
 def render_agreement_section(stats: dict[str, Any]) -> str:
     pct = "n/a" if math.isnan(stats["percent_agreement"]) else f"{stats['percent_agreement']:.1%}"
     kappa = "n/a" if math.isnan(stats["cohen_kappa"]) else f"{stats['cohen_kappa']:.3f}"
-    return "\n".join([
+    lines = [
         "## Human agreement",
         "",
         f"Human pass/fail labels vs the judge on {stats['n']} memos "
@@ -166,7 +179,19 @@ def render_agreement_section(stats: dict[str, Any]) -> str:
         f"| Both fail | {stats['both_fail']} |",
         f"| Human pass, judge fail | {stats['human_pass_judge_fail']} |",
         f"| Human fail, judge pass | {stats['human_fail_judge_pass']} |",
-    ])
+    ]
+    by_tier = stats.get("by_tier") or {}
+    if by_tier:
+        lines += [
+            "",
+            "By group (strategy for memos, routed tier for answers). Small strata: indicative only.",
+            "",
+            "| Group | n | Human pass | Judge pass | Agreement |",
+            "|---|---|---|---|---|",
+            *(f"| {tier} | {s['n']} | {s['human_pass']} | {s['judge_pass']} | {s['agreement']:.0%} |"
+              for tier, s in by_tier.items()),
+        ]
+    return "\n".join(lines)
 
 
 _SECTION = re.compile(r"(?ms)^## Human agreement[^\n]*\n?.*?(?=^## |\Z)")

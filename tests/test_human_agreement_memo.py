@@ -150,6 +150,9 @@ def test_agreement_works_with_memo_strategy_keys(tmp_path):
     assert result["both_pass"] == 15
     assert result["human_fail_judge_pass"] == 15
     assert result["cohen_kappa"] == pytest.approx(0.0)
+    assert set(result["by_tier"]) == set(STRATEGIES)
+    assert {s["n"] for s in result["by_tier"].values()} == {10}
+    assert sum(s["judge_pass"] for s in result["by_tier"].values()) == 30
 
 
 def test_memo_report_section_is_replaced_not_duplicated(tmp_path):

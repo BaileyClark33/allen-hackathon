@@ -41,3 +41,25 @@ Paired view: routed vs all_ultra on the same questions, by the tier the router p
 ![Cost vs quality](charts/cost_vs_quality_memos.png)
 
 ![Routed tier mix](charts/tier_mix_memos.png)
+
+## Human agreement
+
+Human pass/fail labels vs the judge on 30 memos (pass threshold 4.00, min accuracy 4).
+
+| Metric | Value |
+|---|---|
+| Percent agreement | 70.0% |
+| Cohen's kappa | 0.335 |
+| n | 30 |
+| Both pass | 4 |
+| Both fail | 17 |
+| Human pass, judge fail | 0 |
+| Human fail, judge pass | 9 |
+
+By group (strategy for memos, routed tier for answers). Small strata: indicative only.
+
+| Group | n | Human pass | Judge pass | Agreement |
+|---|---|---|---|---|
+| all_nano | 10 | 0 | 0 | 100% |
+| all_ultra | 10 | 2 | 8 | 40% |
+| routed | 10 | 2 | 5 | 70% |

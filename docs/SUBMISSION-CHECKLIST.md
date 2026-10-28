@@ -7,7 +7,7 @@ Track: **Best Apps and Agents**.
 
 - [x] `results/results.md` exists and every README number matches it. *(Checked Oct 26. Two numbers are derived: 20.2% = 121/600 test rows, and the 20.7-point MMLU gap = 88.7 − 68.0.)*
 - [x] `results/public_bench/results_zero_shot_nano.md` exists with 300 frozen items.
-- [ ] `results/memo_results.md` exists with per-strategy scores, CIs and human agreement. *(Scores and CIs are done. Human agreement waits on the 30 labels in `data/memo_bench/memo_human.csv`.)*
+- [x] `results/memo_results.md` exists with per-strategy scores, CIs and human agreement. *(Checked Oct 27. Human agreement on the 30 blind memos: 70.0%, Cohen's κ = 0.335; machine-readable copy in `results/human_agreement_memo.json`.)*
 - [x] `pytest` passes on a fresh clone. *(95 passed on a clean worktree of `a4-a6-memo-results`, Oct 26.)*
 - [ ] `git status` is clean on the submission branch; `data/` and `logs/` are not committed. *(No file under `data/`, `logs/` or `.env` is tracked. Re-check `git status` on the final branch.)*
 - [x] `git log -p | grep -i "api_key"` is clean (no secrets in history). *(That grep also matches the `api_key()` helper by name. The real check, run Oct 26, found neither key value in any commit on any branch.)*
