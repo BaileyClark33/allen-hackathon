@@ -4,6 +4,8 @@
 
 Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
+**Live demo:** https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app — 10 questions per browser session.
+
 > **Project direction and task split:** see [`docs/ROADMAP.md`](docs/ROADMAP.md). The memo pipeline is `src/nemoroute/agent/memo.py` (route → plan → search → extract → synthesize); the router underneath it is evaluated on its own below.
 
 | Tier | Model (Token Factory ID) | Handles |
@@ -216,7 +218,7 @@ Tests use a fake client and make no API calls.
 
 ## Deploying
 
-The app is live at **[INSERT YOUR STREAMLIT CLOUD URL HERE]**.
+The app is live at **[https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app](https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app)**.
 
 - Entry point: `app/streamlit_app.py`
 - Python ≥ 3.11
