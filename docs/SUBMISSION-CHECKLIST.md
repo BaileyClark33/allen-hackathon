@@ -2,24 +2,25 @@
 
 Deadline: **Thu Oct 30, 10:00 AM PT**. Internal target: **Wed Oct 29**.
 Track: **Best Apps and Agents**.
+State checked **Oct 28, 2026** on `main` @ `2b2df70`; live demo at https://nemoroute-demo.streamlit.app.
 
 ## Evidence and repo
 
 - [x] `results/results.md` exists and every README number matches it. *(Checked Oct 26. Two numbers are derived: 20.2% = 121/600 test rows, and the 20.7-point MMLU gap = 88.7 − 68.0.)*
 - [x] `results/public_bench/results_zero_shot_nano.md` exists with 300 frozen items.
 - [x] `results/memo_results.md` exists with per-strategy scores, CIs and human agreement. *(Checked Oct 27. Human agreement on the 30 blind memos: 70.0%, Cohen's κ = 0.335; machine-readable copy in `results/human_agreement_memo.json`.)*
-- [x] `pytest` passes on a fresh clone. *(95 passed on a clean worktree of `a4-a6-memo-results`, Oct 26.)*
-- [ ] `git status` is clean on the submission branch; `data/` and `logs/` are not committed. *(No file under `data/`, `logs/` or `.env` is tracked. Re-check `git status` on the final branch.)*
+- [x] `pytest` passes on a fresh clone. *(95 passed on a clean worktree of `a4-a6-memo-results`, Oct 26. Re-run Oct 28 on a fresh clone of the public `nemoroute` repo @ `2b2df70`: 100 passed.)*
+- [x] `git status` is clean on the submission branch; `data/` and `logs/` are not committed. *(No file under `data/`, `logs/` or `.env` is tracked. Re-checked on `main`, Oct 28. Four local-only notes stay untracked and unpushed: `AGENTS.md`, `docs/HANDOFF-A1*.md`, `.claude/`, `opencode.json`.)*
 - [x] `git log -p | grep -i "api_key"` is clean (no secrets in history). *(That grep also matches the `api_key()` helper by name. The real check, run Oct 26, found neither key value in any commit on any branch.)*
 - [x] Repo is public and `LICENSE` is MIT.
-- [ ] README has setup, results, limitations, demo URL and the Nemotron/Token Factory/Tavily credit. *(The demo URL in "Deploying" is still a placeholder.)*
+- [x] README has setup, results, limitations, demo URL and the Nemotron/Token Factory/Tavily credit. *(Demo URL linked under "Deploying" and at the top; merged in #9, Oct 28.)*
 
 ## Demo
 
-- [ ] Hosted demo URL works logged out and in an incognito window.
-- [ ] Demo uses the dedicated low-limit Token Factory key and the Tavily key.
-- [ ] A query after the session cap is refused politely.
-- [ ] Demo URL is in the README and stays live through Dec 15.
+- [x] Hosted demo URL works logged out and in an incognito window. *(Checked Oct 28 in a cookie-free browser context: home page and `/Evidence` both render, sidebar shows 0 of 10.)*
+- [x] Demo uses the dedicated low-limit Token Factory key and the Tavily key. *(Key `streamlit-demo-5` in Streamlit secrets, separate from the benchmark `hackathon` key. Nebius exposes no per-key spend limit, so the app's `session_query_cap` / `daily_spend_cap_usd` / `total_spend_cap_usd` are the guard.)*
+- [x] A query after the session cap is refused politely. *(Oct 28: 10 memos ran, the 11th returned "This demo allows 10 questions per session. Thanks for trying it!"; session cost $0.02169.)*
+- [x] Demo URL is in the README and stays live through Dec 15. *(Deployment left running on Streamlit Community Cloud; no expiry set.)*
 
 ## Video and Devpost
 
@@ -37,7 +38,7 @@ Track: **Best Apps and Agents**.
 - [x] Thresholds are still locked at `pass_threshold=4.0`, `min_accuracy=5`. *(The memo benchmark uses its own disclosed `memo_bench` rule.)*
 - [x] Test split is frozen; no `--force` was used on `data/splits/test.jsonl` or `data/memo_bench/prompts.jsonl`. *(Prompts SHA256 is still `791ec5c5…c495d`.)*
 - [x] Any router-prompt change made after seeing test results is disclosed in `results/results.md`. *(None was made.)*
-- [ ] The final PR is reviewed and merged by the user (the agent never merges).
+- [x] The final PR is reviewed and merged by the user (the agent never merges). *(#9 and #10 merged Oct 28; every change since has been docs-only.)*
 
 ## Final commands
 
