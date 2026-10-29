@@ -289,10 +289,10 @@ def render_sidebar(cfg: Config, app_log: UsageLog) -> None:
 
     st.sidebar.divider()
     st.sidebar.caption(
-        f"Demo budget: ${app_log.spend_today_utc():.3f} of "
-        f"${cfg.app.daily_spend_cap_usd:.2f} used today (UTC), "
-        f"${app_log.total_spend():.3f} of "
-        f"${cfg.app.total_spend_cap_usd:.2f} overall."
+        f"Demo budget: \\${app_log.spend_today_utc():.3f} of "
+        f"\\${cfg.app.daily_spend_cap_usd:.2f} used today (UTC), "
+        f"\\${app_log.total_spend():.3f} of "
+        f"\\${cfg.app.total_spend_cap_usd:.2f} overall."
     )
     st.sidebar.caption(
         "The all-Ultra estimate prices the same token usage at Ultra rates. "
