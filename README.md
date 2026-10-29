@@ -1,10 +1,10 @@
-# allen-hackathon
+# NemoRoute
 
 **Nemotron research memo agent.** A junior consultant asks a business-strategy question; the agent plans web searches (Tavily), extracts numbered facts from the sources, and writes a cited memo (bottom line, key findings, analysis, risks, next steps). A small, fast NVIDIA Nemotron router reads the question first and sends the memo-writing step to the cheapest Nemotron model that can do it well. All models are served at runtime by the **Nebius Token Factory** inference API.
 
 Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
-**Live demo:** https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app — 10 questions per browser session.
+**Live demo:** https://nemoroute-demo.streamlit.app — 10 questions per browser session.
 
 > **Project direction and task split:** see [`docs/ROADMAP.md`](docs/ROADMAP.md). The memo pipeline is `src/nemoroute/agent/memo.py` (route → plan → search → extract → synthesize); the router underneath it is evaluated on its own below.
 
@@ -218,7 +218,7 @@ Tests use a fake client and make no API calls.
 
 ## Deploying
 
-The app is live at **[https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app](https://allen-hackathon-kg4tvxqf4zur8zy3kxdnnd.streamlit.app)**.
+The app is live at **[https://nemoroute-demo.streamlit.app](https://nemoroute-demo.streamlit.app)**.
 
 - Entry point: `app/streamlit_app.py`
 - Python ≥ 3.11

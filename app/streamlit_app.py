@@ -359,7 +359,7 @@ def main() -> None:
     st.caption(
         "Powered by [Nemotron 3](https://build.nvidia.com/models) (Nano · Super · Ultra) via "
         "[Nebius Token Factory](https://nebius.com) · Web search by [Tavily](https://tavily.com) · "
-        "Built for the Nebius + NVIDIA Allen Hackathon 2026"
+        "Built for the Nebius + NVIDIA Global AI Hackathon 2026"
     )
 
 
