@@ -240,7 +240,8 @@ def display_memo_result(result: MemoResult, cfg: Config) -> None:
 
     # --- Memo content ---
     st.markdown('<div class="memo-card">', unsafe_allow_html=True)
-    st.markdown(result.memo_md)
+    # Escape $ so paired dollar amounts aren't rendered as LaTeX math.
+    st.markdown(result.memo_md.replace("$", r"\$"))
     st.markdown("</div>", unsafe_allow_html=True)
 
     # --- Sources ---
