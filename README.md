@@ -6,7 +6,7 @@ Built for the Nebius x NVIDIA Global AI Hackathon (Best Apps and Agents track).
 
 **Live demo:** https://nemoroute-demo.streamlit.app — 10 questions per browser session.
 
-> **Project direction and task split:** see [`docs/ROADMAP.md`](docs/ROADMAP.md). The memo pipeline is `src/nemoroute/agent/memo.py` (route → plan → search → extract → synthesize); the router underneath it is evaluated on its own below.
+> **Pipeline:** `src/nemoroute/agent/memo.py` runs route → plan → search → extract → synthesize. Planning and fact extraction run on Nano; the router picks the tier for the synthesis step. The router is also evaluated on its own below.
 
 | Tier | Model (Token Factory ID) | Handles |
 |---|---|---|
@@ -93,7 +93,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Add your Token Factory key to `.env` as `NEBIUS_API_KEY=...`. `.env` is gitignored.
+Add your Token Factory key to `.env` as `NEBIUS_API_KEY=...` and your Tavily key as `TAVILY_API_KEY=...` (the memo agent uses it for web search). `.env` is gitignored.
 
 All model IDs, prices, thresholds, paths and caps live in `config.yaml`.
 
@@ -103,12 +103,12 @@ All model IDs, prices, thresholds, paths and caps live in `config.yaml`.
 streamlit run app/streamlit_app.py
 ```
 
-Type a question. The app shows:
-- the tier the router chose and its reasoning
-- the answer
-- that query's cost and latency
+Type a question or pick an example. The app shows:
+- the tier the router chose for the memo and its reasoning
+- the cited memo, its numbered sources and a Markdown download
+- a per-step cost table (route, plan, search, extract, synthesize) with model, tokens, cost and latency, plus an all-Ultra estimate for comparison
 
-The sidebar tracks cumulative session cost and the estimated savings against sending everything to Ultra.
+The sidebar tracks memos run and cumulative session cost. The **Evidence** page shows the benchmark results and charts from `results/`.
 
 ### Spend protection for the public demo
 
@@ -205,7 +205,7 @@ What each command does:
   - **Two pass rules.** The headline pass rate uses a memo-specific rule (accuracy ≥ 4) rather than the locked labeling rule (accuracy ≥ 5); both are reported.
   - **all-Ultra plans with Nano.** It is all-Ultra except for the shared planning step, so that all strategies see the same sources.
   - **Failures kept in the results.** One all-Nano memo failed twice and is excluded. One memo's synthesis was cut off at the token limit and is scored as is. One all-Nano memo has no citations and is also scored as is.
-- **No fine-tuning.** Token Factory can't fine-tune Nemotron, and hosting custom weights live through judging isn't affordable, so the router is prompted rather than trained (see `docs/ROADMAP.md`).
+- **No fine-tuning.** Token Factory can't fine-tune Nemotron, and hosting custom weights live through judging isn't affordable, so the router is prompted rather than trained.
 - **The closed reference model is for evaluation only.** It never answers in the product path. It runs at its default thinking depth (effort `medium`), while the Nemotron tiers answer with reasoning off. Refusals are recorded as empty answers and score as fails.
 
 ## Tests

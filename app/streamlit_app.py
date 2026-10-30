@@ -323,10 +323,10 @@ def main() -> None:
     # --- Header ---
     st.title("Nemotron Research Memo Agent")
     st.markdown(
-        "Ask any business research question and get a sourced consulting memo in seconds. "
-        "NemoRoute intelligently routes each step of the pipeline — planning, extraction, and synthesis — "
-        "to the cheapest capable Nemotron model, then compiles findings into a polished, "
-        "citation-backed markdown memo."
+        "Ask a business research question and get a sourced consulting memo in about a minute. "
+        "Nemotron Nano plans the web searches and extracts numbered facts from the sources; "
+        "a Nano router then sends the memo-writing step to the cheapest Nemotron tier "
+        "(Nano, Super or Ultra) that can handle the question. The memo cites its sources."
     )
 
     # --- Example buttons ---
@@ -409,4 +409,10 @@ def run_memo_flow(
 
 
 if __name__ == "__main__":
-    main()
+    # Explicit navigation so the sidebar says "Memo Agent", not the entry file's name.
+    st.navigation(
+        [
+            st.Page(main, title="Memo Agent", icon="📋", default=True),
+            st.Page("pages/1_📊_Evidence.py", title="Evidence", icon="📊", url_path="Evidence"),
+        ]
+    ).run()
