@@ -8,6 +8,7 @@ Guard clauses ensure graceful handling of missing files.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import streamlit as st
@@ -66,6 +67,38 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 st.title("Benchmark Evidence")
 
+
+# Markdown image links are relative to results/, which Streamlit doesn't serve.
+IMAGE_LINE = re.compile(r"^!\[(?P<alt>[^\]]*)\]\((?P<src>[^)]+)\)\s*$")
+
+
+def card_body(path: Path) -> str:
+    """Results markdown without its H1 title (the page header names the section) or
+    image links (the Charts section draws those charts)."""
+    lines = path.read_text().splitlines()
+    if lines and lines[0].startswith("# "):
+        lines = lines[1:]
+    return "\n".join(line for line in lines if not IMAGE_LINE.match(line)).strip()
+
+
+def render_with_images(path: Path) -> None:
+    """Render results markdown, drawing its image links with st.image."""
+    text: list[str] = []
+    for line in path.read_text().splitlines():
+        match = IMAGE_LINE.match(line)
+        if match is None:
+            text.append(line)
+            continue
+        if text:
+            st.markdown("\n".join(text))
+            text = []
+        image_path = path.parent / match["src"]
+        if image_path.exists():
+            st.image(str(image_path), caption=match["alt"])
+    if text:
+        st.markdown("\n".join(text))
+
+
 # ---------------------------------------------------------------------------
 # Routing benchmark
 # ---------------------------------------------------------------------------
@@ -78,7 +111,7 @@ if not routing_results.exists():
 else:
     with st.container():
         st.markdown(
-            f'<div class="evidence-card">{routing_results.read_text()}</div>',
+            f'<div class="evidence-card">\n\n{card_body(routing_results)}\n\n</div>',
             unsafe_allow_html=True,
         )
 
@@ -96,7 +129,7 @@ if not pub_results.exists():
 else:
     with st.container():
         st.markdown(
-            f'<div class="evidence-card">{pub_results.read_text()}</div>',
+            f'<div class="evidence-card">\n\n{card_body(pub_results)}\n\n</div>',
             unsafe_allow_html=True,
         )
 
@@ -147,6 +180,6 @@ memo_results = RESULTS_DIR / "memo_results.md"
 if memo_results.exists():
     st.header("Memo Benchmark")
     with st.container(border=True):
-        st.markdown(memo_results.read_text())
+        render_with_images(memo_results)
 else:
     st.info("Memo benchmark results coming soon.")
