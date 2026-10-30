@@ -83,6 +83,19 @@ The router saves 85% against all-Ultra but gives up 20.7 points of accuracy; it 
 - **Dataset generation.** Nemotron 3 Ultra writes realistic consulting queries across three difficulty levels, deduplicated with TF-IDF cosine similarity.
 - **Labeling.** Nano, Super and Ultra all answer every query. Nemotron 3 Ultra (reasoning on) grades each answer blind against a written rubric: accuracy, completeness, structure and actionability. The label is the cheapest tier whose answer passes.
 - **Cost accounting.** Every call logs model, input/output tokens, latency and cost (from Token Factory per-token prices) to `logs/calls.jsonl`.
+- **Memo agent.** Nano plans the web searches and extracts numbered facts; the routed tier writes the memo. In the memo benchmark, Nemotron 3 Ultra judges each memo blind against numbered source snippets.
+
+### Where Token Factory accelerated our workflow
+
+- **Three model sizes behind one API.** Nano (30B), Super (120B) and Ultra (550B) are served from one endpoint with one key, so we provisioned no GPUs and ran no serving stack. Self-hosting Ultra alone would have needed a multi-GPU node.
+- **Routing is a config change.** Each tier is a model ID in `config.yaml`, and the `openai` SDK works unchanged, so moving a step to a different Nemotron size is a one-line edit. That is what makes a cost router practical.
+- **Per-request controls.** The reasoning toggle let us run the router and answer tiers with reasoning off and the judge with reasoning on, using the same models. JSON-schema output gave us structured routes, plans, facts and judgments.
+- **Scale on a small budget.** Dataset generation, three-tier labeling, judging and every benchmark took **6,041 Token Factory calls for $28.50 in total** (Oct 13–27, 2026), run four calls at a time.
+- **Exact cost accounting.** Published per-token prices let us price every call exactly, which drives the budget guard, the demo's spend caps and every cost figure in the results.
+
+### Other Nebius tools and services
+
+Token Factory is the only Nebius service we used. The public demo is hosted on Streamlit Community Cloud and calls Token Factory with its own API key; the app enforces per-session, daily and lifetime spend caps.
 
 ## Setup
 
@@ -222,7 +235,7 @@ The app is live at **[https://nemoroute-demo.streamlit.app](https://nemoroute-de
 
 - Entry point: `app/streamlit_app.py`
 - Python ≥ 3.11
-- Secrets: `NEBIUS_API_KEY` (low-limit Token Factory key) and `TAVILY_API_KEY` (Tavily search key)
+- Secrets: `NEBIUS_API_KEY` (a dedicated Token Factory key) and `TAVILY_API_KEY` (Tavily search key)
 - Writable paths fall back to `/tmp` when the repo directory is read-only
 
 ## Credits
